@@ -22,7 +22,7 @@ def modify_source_file(file_path, new_file_path, name_value, domain_value, url_v
     new_content = re.sub(r'name\s=\s\'重庆悦潼科技有限公司\'', f'name = \'{name_value}\'', content)
     new_content = re.sub(r'domain\s=\s\'yangyuetong.com\'', f'domain = \'{domain_value}\'', new_content)
     new_content = re.sub(r'url\s=\s\'http://localhost:5000\'', f'url = \'{url_value}\'', new_content)
-    # new_content = re.sub(r'window\.iconbitmap\(default=\'config/logo\.ico\'\)', '', new_content) 本来是设置icon的，没用了
+    # new_content = re.sub(r'window\.iconbitmap\(default=\'config/logo\.ico\'\)', '', new_content) 本来是设置icon的，没用了了了了
     new_content = re.sub(r'logo_icon\s=.*\n', '', new_content)
     new_content = re.sub(r'img\s=.*\n', '', new_content)
     new_content = re.sub(r'window\.iconphoto\(True, img\)\n', '', new_content)
