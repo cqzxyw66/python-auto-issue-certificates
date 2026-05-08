@@ -24,12 +24,12 @@ def init_database():
                         company_name TEXT not null,
                         company_logo BLOB,
                         common_name TEXT not null,
-                        ico BLOB,
+                        logo BLOB,
                         url TEXT)''')
     cursor.execute('''CREATE TABLE IF NOT EXISTS user (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         userid INTEGER,
-                        username TEXT UNIQUE,
+                        username TEXT UNIQUE not null,
                         password hash TEXT,
                         display_name TEXT,
                         role TEXT,

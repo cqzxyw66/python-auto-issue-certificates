@@ -10,7 +10,6 @@ import datetime
 import client.create_certificate as create_certificate
 from cryptography.hazmat.primitives import serialization
 import config.logo_icon as logo_icon
-import os
 
 #获取参数传进来的企业信息
 name = '重庆悦潼科技有限公司'
