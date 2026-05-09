@@ -66,11 +66,28 @@ def get_serial_number_status(serial_number):
         return 'OK'
     else:
         return 'Fail'
+    
+#获取公司域名
+def get_domain():
+    url_query = url + '/company_query'
+    response = requests.get(url_query)
+    if response.status_code == 200:
+        return response.json().get('common_name')
+    else:
+        return '不存在'
 
 #开始按钮
 def start_button():
     global computer_info
     computer_info = get_computer_info.computer_info().get_computer_info()
+    #开始按钮点击后，清空之前的信息
+    label_account_value.config(text='')
+    label_domain_value.config(text='')
+    label_serialnumber_status.config(text='')
+    label_account_status.config(text='')
+    label_domain_status.config(text='')
+    button_request.config(state='disabled')
+    #检查网络连接
     try:
         requests.get(url, timeout=1)
     except requests.exceptions.ConnectionError:
@@ -85,7 +102,9 @@ def start_button():
     label_serialnumber_status.config(text=get_serial_number_result, fg='green' if get_serial_number_result == 'OK' else 'red')
     # label_serialnumber_status.config(text=get_serial_number_status(computer_info['serial_number']), fg='green' if get_serial_number_status(computer_info['serial_number']) == 'OK' else 'red') 请求了两次接口，暂时停用
     label_account_status.config(text='OK' if datetime.datetime.strptime(label_account_value['text'].split('：')[1], '%Y-%m-%d %H:%M:%S') > datetime.datetime.now() else 'Fail', fg='green' if datetime.datetime.strptime(label_account_value['text'].split('：')[1], '%Y-%m-%d %H:%M:%S') > datetime.datetime.now() else 'red')
-    label_domain_status.config(text='OK' if label_domain_value['text'] == domain else 'Fail', fg='green' if label_domain_value['text'] == domain else 'red')
+    #获取公司域名
+    get_domain_result = get_domain()
+    label_domain_status.config(text='OK' if label_domain_value['text'] == get_domain_result else 'Fail', fg='green' if label_domain_value['text'] == get_domain_result else 'red')
     label_certificate_status.config(text='OK' if '未发现' in label_certificate_value['text'] or datetime.datetime.now() > datetime.datetime.strptime(label_certificate_value['text'].split('：')[1], '%Y-%m-%d %H:%M:%S') else 'Fail', fg='green' if '未发现' in label_certificate_value['text'] or datetime.datetime.now() > datetime.datetime.strptime(label_certificate_value['text'].split('：')[1], '%Y-%m-%d %H:%M:%S') else 'red')
     if label_serialnumber_status['text'] == 'OK' and label_account_status['text'] == 'OK' and label_domain_status['text'] == 'OK':
         button_request.config(state='normal')
@@ -99,9 +118,14 @@ def delete_old_certificate(username):
 def messagebox_show():
     ret = messagebox.askyesno('提示','证书已经存在，是否继续申请？')
     if ret:
-        delete_old_certificate(computer_info['username'])
-        request_certificate()
-        messagebox_success()
+        try:
+            requests.get(url, timeout=1)
+            delete_old_certificate(computer_info['username'])
+            request_certificate()
+            messagebox_success()
+        except requests.exceptions.ConnectionError:
+            messagebox_network_fail()
+            return
 
 #弹窗提示网络连接失败
 def messagebox_network_fail():
@@ -116,8 +140,13 @@ def request_button():
     if label_certificate_status['text'] == 'Fail':
         messagebox_show()
     else:
-        request_certificate()
-        messagebox_success()
+        try:
+            requests.get(url, timeout=1)
+            request_certificate()
+            messagebox_success()
+        except requests.exceptions.ConnectionError:
+            messagebox_network_fail()
+            return
 
 #申请证书
 def request_certificate():
@@ -161,7 +190,7 @@ label_serialnumber.grid(row=1, column=0, sticky='w', padx=10)
 label_serialnumber_value = tk.Label(window, font=('Microsoft YaHei', 11), fg='black')
 label_serialnumber_value.grid(row=1, column=1, sticky='w')
 label_serialnumber_status = tk.Label(window, font=('Microsoft YaHei', 11), fg='black', anchor='center')
-label_serialnumber_status.grid(row=1, column=2, sticky='w')
+label_serialnumber_status.grid(row=1, column=2, sticky='we')
 
 #账号
 label_account = tk.Label(window, text='账号:', font=('Microsoft YaHei', 11, 'bold'), fg='black')
@@ -169,7 +198,7 @@ label_account.grid(row=2, column=0, sticky='w', padx=10)
 label_account_value = tk.Label(window, font=('Microsoft YaHei', 11), fg='black')
 label_account_value.grid(row=2, column=1, sticky='w')
 label_account_status = tk.Label(window, font=('Microsoft YaHei', 11), fg='black')
-label_account_status.grid(row=2, column=2, sticky='w')
+label_account_status.grid(row=2, column=2, sticky='we')
 
 #加域
 label_domain = tk.Label(window, text='加域情况：', font=('Microsoft YaHei', 11, 'bold'), fg='black')
@@ -177,7 +206,7 @@ label_domain.grid(row=3, column=0, sticky='w', padx=10)
 label_domain_value = tk.Label(window, text='', font=('Microsoft YaHei', 11), fg='black')
 label_domain_value.grid(row=3, column=1, sticky='w')
 label_domain_status = tk.Label(window, text='', font=('Microsoft YaHei', 11), fg='black')
-label_domain_status.grid(row=3, column=2, sticky='w')
+label_domain_status.grid(row=3, column=2, sticky='we')
 
 #证书
 label_certificate = tk.Label(window, text='证书情况：', font=('Microsoft YaHei', 11, 'bold'), fg='black')
@@ -185,7 +214,7 @@ label_certificate.grid(row=4, column=0, sticky='w', padx=10)
 label_certificate_value = tk.Label(window, font=('Microsoft YaHei', 11), fg='black')
 label_certificate_value.grid(row=4, column=1, sticky='w')
 label_certificate_status = tk.Label(window, font=('Microsoft YaHei', 11), fg='black')
-label_certificate_status.grid(row=4, column=2, sticky='w')
+label_certificate_status.grid(row=4, column=2, sticky='we')
 
 #申请按钮
 button_request = tk.Button(window, text='申请证书', font=('Microsoft YaHei', 15, 'bold'), fg='black', state='disabled', command=request_button)
