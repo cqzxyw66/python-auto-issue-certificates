@@ -86,6 +86,7 @@ def start_button():
     label_serialnumber_status.config(text='')
     label_account_status.config(text='')
     label_domain_status.config(text='')
+    button_request.config(state='disabled')
     #检查网络连接
     try:
         requests.get(url, timeout=1)
@@ -189,7 +190,7 @@ label_serialnumber.grid(row=1, column=0, sticky='w', padx=10)
 label_serialnumber_value = tk.Label(window, font=('Microsoft YaHei', 11), fg='black')
 label_serialnumber_value.grid(row=1, column=1, sticky='w')
 label_serialnumber_status = tk.Label(window, font=('Microsoft YaHei', 11), fg='black', anchor='center')
-label_serialnumber_status.grid(row=1, column=2, sticky='w')
+label_serialnumber_status.grid(row=1, column=2, sticky='we')
 
 #账号
 label_account = tk.Label(window, text='账号:', font=('Microsoft YaHei', 11, 'bold'), fg='black')
@@ -197,7 +198,7 @@ label_account.grid(row=2, column=0, sticky='w', padx=10)
 label_account_value = tk.Label(window, font=('Microsoft YaHei', 11), fg='black')
 label_account_value.grid(row=2, column=1, sticky='w')
 label_account_status = tk.Label(window, font=('Microsoft YaHei', 11), fg='black')
-label_account_status.grid(row=2, column=2, sticky='w')
+label_account_status.grid(row=2, column=2, sticky='we')
 
 #加域
 label_domain = tk.Label(window, text='加域情况：', font=('Microsoft YaHei', 11, 'bold'), fg='black')
@@ -205,7 +206,7 @@ label_domain.grid(row=3, column=0, sticky='w', padx=10)
 label_domain_value = tk.Label(window, text='', font=('Microsoft YaHei', 11), fg='black')
 label_domain_value.grid(row=3, column=1, sticky='w')
 label_domain_status = tk.Label(window, text='', font=('Microsoft YaHei', 11), fg='black')
-label_domain_status.grid(row=3, column=2, sticky='w')
+label_domain_status.grid(row=3, column=2, sticky='we')
 
 #证书
 label_certificate = tk.Label(window, text='证书情况：', font=('Microsoft YaHei', 11, 'bold'), fg='black')
@@ -213,7 +214,7 @@ label_certificate.grid(row=4, column=0, sticky='w', padx=10)
 label_certificate_value = tk.Label(window, font=('Microsoft YaHei', 11), fg='black')
 label_certificate_value.grid(row=4, column=1, sticky='w')
 label_certificate_status = tk.Label(window, font=('Microsoft YaHei', 11), fg='black')
-label_certificate_status.grid(row=4, column=2, sticky='w')
+label_certificate_status.grid(row=4, column=2, sticky='we')
 
 #申请按钮
 button_request = tk.Button(window, text='申请证书', font=('Microsoft YaHei', 15, 'bold'), fg='black', state='disabled', command=request_button)
