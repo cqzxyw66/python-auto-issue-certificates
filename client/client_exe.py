@@ -66,6 +66,15 @@ def get_serial_number_status(serial_number):
         return 'OK'
     else:
         return 'Fail'
+    
+#获取公司域名
+def get_domain():
+    url_query = url + '/company_query'
+    response = requests.get(url_query)
+    if response.status_code == 200:
+        return response.json().get('common_name')
+    else:
+        return '不存在'
 
 #开始按钮
 def start_button():
@@ -85,7 +94,9 @@ def start_button():
     label_serialnumber_status.config(text=get_serial_number_result, fg='green' if get_serial_number_result == 'OK' else 'red')
     # label_serialnumber_status.config(text=get_serial_number_status(computer_info['serial_number']), fg='green' if get_serial_number_status(computer_info['serial_number']) == 'OK' else 'red') 请求了两次接口，暂时停用
     label_account_status.config(text='OK' if datetime.datetime.strptime(label_account_value['text'].split('：')[1], '%Y-%m-%d %H:%M:%S') > datetime.datetime.now() else 'Fail', fg='green' if datetime.datetime.strptime(label_account_value['text'].split('：')[1], '%Y-%m-%d %H:%M:%S') > datetime.datetime.now() else 'red')
-    label_domain_status.config(text='OK' if label_domain_value['text'] == domain else 'Fail', fg='green' if label_domain_value['text'] == domain else 'red')
+    #获取公司域名
+    get_domain_result = get_domain()
+    label_domain_status.config(text='OK' if label_domain_value['text'] == get_domain_result else 'Fail', fg='green' if label_domain_value['text'] == get_domain_result else 'red')
     label_certificate_status.config(text='OK' if '未发现' in label_certificate_value['text'] or datetime.datetime.now() > datetime.datetime.strptime(label_certificate_value['text'].split('：')[1], '%Y-%m-%d %H:%M:%S') else 'Fail', fg='green' if '未发现' in label_certificate_value['text'] or datetime.datetime.now() > datetime.datetime.strptime(label_certificate_value['text'].split('：')[1], '%Y-%m-%d %H:%M:%S') else 'red')
     if label_serialnumber_status['text'] == 'OK' and label_account_status['text'] == 'OK' and label_domain_status['text'] == 'OK':
         button_request.config(state='normal')
