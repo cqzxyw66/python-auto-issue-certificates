@@ -80,6 +80,13 @@ def get_domain():
 def start_button():
     global computer_info
     computer_info = get_computer_info.computer_info().get_computer_info()
+    #开始按钮点击后，清空之前的信息
+    label_account_value.config(text='')
+    label_domain_value.config(text='')
+    label_serialnumber_status.config(text='')
+    label_account_status.config(text='')
+    label_domain_status.config(text='')
+    #检查网络连接
     try:
         requests.get(url, timeout=1)
     except requests.exceptions.ConnectionError:
@@ -110,9 +117,14 @@ def delete_old_certificate(username):
 def messagebox_show():
     ret = messagebox.askyesno('提示','证书已经存在，是否继续申请？')
     if ret:
-        delete_old_certificate(computer_info['username'])
-        request_certificate()
-        messagebox_success()
+        try:
+            requests.get(url, timeout=1)
+            delete_old_certificate(computer_info['username'])
+            request_certificate()
+            messagebox_success()
+        except requests.exceptions.ConnectionError:
+            messagebox_network_fail()
+            return
 
 #弹窗提示网络连接失败
 def messagebox_network_fail():
@@ -127,8 +139,13 @@ def request_button():
     if label_certificate_status['text'] == 'Fail':
         messagebox_show()
     else:
-        request_certificate()
-        messagebox_success()
+        try:
+            requests.get(url, timeout=1)
+            request_certificate()
+            messagebox_success()
+        except requests.exceptions.ConnectionError:
+            messagebox_network_fail()
+            return
 
 #申请证书
 def request_certificate():
