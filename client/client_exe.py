@@ -86,18 +86,22 @@ def start_button():
     label_serialnumber_status.config(text='')
     label_account_status.config(text='')
     label_domain_status.config(text='')
+    label_certificate_status.config(text='')
     button_request.config(state='disabled')
+
+    #每次点击，先本地检查序列号和证书情况
+    label_serialnumber_value.config(text=computer_info['serial_number'])
+    label_certificate_value.config(text=get_certificate_status((computer_info['username'])))
     #检查网络连接
     try:
         requests.get(url, timeout=1)
     except requests.exceptions.ConnectionError:
         messagebox_network_fail()
         return
-    label_serialnumber_value.config(text=computer_info['serial_number'])
+    
     label_account_value.config(text=computer_info['username'] +', 有效期至：' + get_account_when_expired(computer_info['username']))
     label_domain_value.config(text=computer_info['domain'])
     # label_domain_value.config(text='yangyuetong.com') 测试代码
-    label_certificate_value.config(text=get_certificate_status((computer_info['username'])))
     get_serial_number_result = get_serial_number_status(computer_info['serial_number'])
     label_serialnumber_status.config(text=get_serial_number_result, fg='green' if get_serial_number_result == 'OK' else 'red')
     # label_serialnumber_status.config(text=get_serial_number_status(computer_info['serial_number']), fg='green' if get_serial_number_status(computer_info['serial_number']) == 'OK' else 'red') 请求了两次接口，暂时停用

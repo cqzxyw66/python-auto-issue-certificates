@@ -11,12 +11,12 @@ def main():
     #从数据库中读取企业的信息，包含公司名称，通用名称，邮箱
     with sqlite3.connect('config/database/database.db') as f:
         cursor = f.cursor()
-        cursor.execute("SELECT company_name,common_name,root_mail FROM configuration")
+        cursor.execute("SELECT company_name,url,root_mail FROM configuration")
         query_result = cursor.fetchall()
 
     country_name = 'CN'
     organization_name = query_result[0][0]
-    common_name = query_result[0][1]
+    common_name = query_result[0][1].split('//')[1].split(':')[0]
     mail = [query_result[0][2]]
 
     csr_info = certificate_generate()

@@ -28,14 +28,17 @@ def init_database():
                         url TEXT)''')
     cursor.execute('''CREATE TABLE IF NOT EXISTS user (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        userid INTEGER,
                         username TEXT UNIQUE not null,
-                        password hash TEXT,
-                        display_name TEXT,
+                        password TEXT,
+                        displayname TEXT,
                         role TEXT,
-                        email TEXT,
-                        state NUMERIC,
-                        phone TEXT)''')
+                        mail TEXT,
+                        status TEXT,
+                        phone TEXT,
+                        when_expired TEXT,
+                        cn TEXT,
+                        when_created TEXT,
+                        pwd_last_set TEXT)''')
     cursor.execute('''CREATE TABLE IF NOT EXISTS log (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         timestamp timestamp,

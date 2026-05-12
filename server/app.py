@@ -64,7 +64,7 @@ def user_query():
     username_query = request.args.get('username')
     with sqlite3.connect('config/database/database.db') as f:
         cursor = f.cursor()
-        cursor.execute("SELECT username,email,state,when_expired FROM user where username = ?", (username_query,))
+        cursor.execute("SELECT username,mail,status,when_expired FROM user where username = ?", (username_query,))
         userinfo = cursor.fetchall()
     if not userinfo:
         return Response(status=404, mimetype='application/json', response=json.dumps({'error': 'username not found'}))
