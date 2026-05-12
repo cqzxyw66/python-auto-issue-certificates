@@ -8,6 +8,7 @@ import sqlite3
 import ldap3.core.exceptions
 
 class ldap_connection():
+    #初始化连接
     def __init__(self, ca_certs_file='config/domain_controller_certifiate.cer', port=636, server_address='ldaps://dc01.yangyuetong.com', domain='yangyuetong.com') -> None:
         self.port = port
         self.ca_certs_file = ca_certs_file
@@ -17,18 +18,8 @@ class ldap_connection():
     def __repr__(self) -> str:
         return str(self.result)
     
+    # 根据用户定义的专用账号来查询users, 返回base_dn下面所有用户的信息
     def query(self, username, password, base_dn):
-        # tls = Tls(
-        #     ca_certs_file = self.ca_certs_file,
-        #     validate = ssl.CERT_REQUIRED
-        # )
-
-        # server = Server(
-        #     self.dc,
-        #     port = self.port,
-        #     use_ssl = True,
-        #     tls = tls
-        # )
         server = Server(
             self.dc,
             get_info=ALL
@@ -61,6 +52,7 @@ class ldap_connection():
         self.result = conn.entries
         return conn.entries
 
+    # 根据提供过来的账号密码来修改密码
     def modify_passwd(self, username, old_password, new_password, base_dn):
         server = Server(
             self.dc,
@@ -91,7 +83,7 @@ class ldap_connection():
 
         return result
         
-
+# 查询并更新数据库
 def main(username, password, server_address='ldaps://dc01.yangyuetong.com', port=636, ca_certs_file='config/domain_controller_certifiate.cer', domain='yangyuetong.com', base_dn='ou=home,dc=yangyuetong,dc=com'):
     a = ldap_connection(ca_certs_file, port, server_address, domain)
     result = a.query(username, password, base_dn)
@@ -133,20 +125,19 @@ def main(username, password, server_address='ldaps://dc01.yangyuetong.com', port
                         user_result_from_ldaps)
         f.commit()
 
-def modify_password(username, old_password, new_password,server_address='ldaps://dc01.yangyuetong.com', port=636, ca_certs_file='config/domain_controller_certifiate.cer', domain='yangyuetong.com', base_dn='dc=yangyuetong,dc=com'):
+# 修改密码
+def modify_password(username, 
+                    old_password, 
+                    new_password,server_address='ldaps://dc01.yangyuetong.com', 
+                    port=636, 
+                    ca_certs_file='config/domain_controller_certifiate.cer', 
+                    domain='yangyuetong.com', 
+                    base_dn='dc=yangyuetong,dc=com'
+                    ):
     b = ldap_connection(ca_certs_file, port, server_address, domain)
     return b.modify_passwd(username, old_password, new_password, base_dn)
 
 if __name__ == '__main__':
-    # main('wangying2@yangyuetong.com', 'Unis@123456', 'ou=home,dc=yangyuetong,dc=com', server_address='dc01.yangyuetong.com', port=636, ca_certs_file='config/domain_controller_certifiate.cer')
-    # import ldap3
-
-    # s = Server('ldaps://dc01.yangyuetong.com', get_info=ALL)
-    # c = Connection(s, user='certificaterobot@yangyuetong.com', password='Unis@123456', auto_bind=True)
-    # print(c.extend.standard.who_am_i())
-    # result = c.extend.microsoft.modify_password(user='CN=wangying2,OU=home,DC=yangyuetong,DC=com', old_password='6yhn^YHN', new_password='1qaz!QAZ')
-    # print(c.result)
-
     result = modify_password('wangying2', old_password='Unis@123456', new_password='Unis@1234567')
 
     print(result)
