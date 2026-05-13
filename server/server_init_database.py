@@ -25,7 +25,16 @@ def init_database():
                         company_logo BLOB,
                         common_name TEXT not null,
                         logo BLOB,
-                        url TEXT)''')
+                        url TEXT,
+                        mail_id,
+                        mail_pwd,
+                        mail_server,
+                        mail_server_port,
+                        ldap_account_id,
+                        ldap_pwd,
+                        ldap_url,
+                        ldap_port,
+                        ldap_base_dn)''')
     cursor.execute('''CREATE TABLE IF NOT EXISTS user (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         username TEXT UNIQUE not null,

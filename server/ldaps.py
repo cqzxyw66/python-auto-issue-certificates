@@ -84,7 +84,19 @@ class ldap_connection():
         return result
         
 # 查询并更新数据库
-def main(username, password, server_address='ldaps://dc01.yangyuetong.com', port=636, ca_certs_file='config/domain_controller_certifiate.cer', domain='yangyuetong.com', base_dn='ou=home,dc=yangyuetong,dc=com'):
+def main(ca_certs_file='config/domain_controller_certifiate.cer'):
+    with sqlite3.connect('config/database/database.db') as f:
+        cursor = f.cursor()
+        cursor.execute("SELECT ldap_account_id,ldap_pwd,ldap_url,ldap_port,ldap_base_dn,common_name FROM configuration")
+        company_info = cursor.fetchall()
+
+    username = company_info[0][0]
+    password = company_info[0][1]
+    server_address = company_info[0][2]
+    port = company_info[0][3]
+    base_dn = company_info[0][4]
+    domain = company_info[0][5]
+    
     a = ldap_connection(ca_certs_file, port, server_address, domain)
     result = a.query(username, password, base_dn)
     user_result_from_ldaps = []
@@ -96,7 +108,15 @@ def main(username, password, server_address='ldaps://dc01.yangyuetong.com', port
         except OverflowError:
             when_expired = datetime.datetime(9999, 1, 1)
         when_expired = when_expired.strftime('%Y-%m-%d %H:%M:%S')
-        status = 'enabled' if i['userAccountControl'].value == 512 else ('disabled' if i['userAccountControl'].value == 514 else 'disabled')
+        match i['userAccountControl'].value:
+            case 512:
+                status = 'enabled'
+            case 514:
+                status = 'disabled'
+            case 66048:
+                status = 'never expired'
+            case _:
+                status = 'unknown'
 
         user_info = i['sAMAccountName'].value, i['displayname'].value,i['mail'].value, status, i['telephoneNumber'].value,  when_expired, i['cn'].value, when_created, pwd_last_set
         user_result_from_ldaps.append(user_info)
@@ -128,18 +148,22 @@ def main(username, password, server_address='ldaps://dc01.yangyuetong.com', port
 # 修改密码
 def modify_password(username, 
                     old_password, 
-                    new_password,server_address='ldaps://dc01.yangyuetong.com', 
-                    port=636, 
-                    ca_certs_file='config/domain_controller_certifiate.cer', 
-                    domain='yangyuetong.com', 
-                    base_dn='dc=yangyuetong,dc=com'
+                    new_password,
+                    ca_certs_file='config/domain_controller_certifiate.cer'
                     ):
+    with sqlite3.connect('config/database/database.db') as f:
+        cursor = f.cursor()
+        cursor.execute("SELECT ldap_url,ldap_port,ldap_base_dn,common_name FROM configuration")
+        company_info = cursor.fetchall()
+
+    server_address = company_info[0][0]
+    port = company_info[0][1]
+    base_dn = company_info[0][2]
+    domain = company_info[0][3]
+
     b = ldap_connection(ca_certs_file, port, server_address, domain)
     return b.modify_passwd(username, old_password, new_password, base_dn)
 
 if __name__ == '__main__':
-    result = modify_password('wangying2', old_password='Unis@123456', new_password='Unis@1234567')
 
-    print(result)
-
-    main('certificaterobot', 'Unis@123456', base_dn='ou=home,dc=yangyuetong,dc=com', domain='yangyuetong.com')
+    main()
