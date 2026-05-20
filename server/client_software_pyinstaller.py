@@ -7,6 +7,7 @@ import PyInstaller.__main__
 import os
 import shutil
 import time
+import pyinstaller_versionfile
 
 BASE_DIR = os.path.abspath('.')
 ICON_PATH = os.path.join(BASE_DIR, 'config', 'logo.ico')
@@ -31,12 +32,30 @@ def modify_source_file(file_path, new_file_path, name_value, domain_value, url_v
     with open(new_file_path, 'w', encoding='utf-8') as f:
         f.write(new_content)
 
+def version():
+    with sqlite3.connect('config/database/database.db') as f:
+        cursor = f.cursor()
+        cursor.execute("SELECT company_name,common_name FROM configuration")
+        query_result = cursor.fetchall()
+        cursor.close()
+
+    pyinstaller_versionfile.create_versionfile(
+    output_file='client/pyinstaller_versionfile.txt',
+    version='1.0.0',
+    company_name=query_result[0][0],
+    file_description='证书生成工具',
+    legal_copyright=f'© {query_result[0][1]} 版权所有',
+    product_name='证书生成工具'
+    )
+    pass
+
 def main():
     TARGET_NAME = query_result[0][0]
     TARGET_DOMAIN = query_result[0][1]
     TARGET_URL = query_result[0][2]
 
     modify_source_file('client/client_exe.py', 'client/client_exe_modified.py', TARGET_NAME, TARGET_DOMAIN, TARGET_URL)
+    version()
 
     for item in os.listdir('config/'):
         if item.endswith('.exe'):
@@ -52,11 +71,13 @@ def main():
         f'--distpath={os.path.join(BASE_DIR, 'config')}',
         f'--workpath={os.path.join(BASE_DIR, 'config', 'build')}',
         f'--specpath={os.path.join(BASE_DIR, 'config', 'build')}',
+        f'--version-file={os.path.join(BASE_DIR, 'client', 'pyinstaller_versionfile.txt')}',
         f'-i={ICON_PATH}'
         # f'--add-data={os.path.join(BASE_DIR, 'config', 'logo.ico')}:.'
     ])
 
     os.remove('client/client_exe_modified.py')
+    os.remove('client/pyinstaller_versionfile.txt')
     for item in os.listdir(os.path.join(BASE_DIR, 'config', 'build')):
         path = os.path.join(BASE_DIR, 'config', 'build', item)
         if os.path.isdir(path):

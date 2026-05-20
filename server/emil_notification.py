@@ -44,9 +44,7 @@ def main(expired_persons: list):
                 <html>
                     <body>
                         <h3>尊敬的{json_in["displayname"]}:</h3>
-                            <p>&nbsp;&nbsp;&nbsp;&nbsp;您好，</p>
-                            <p>&nbsp;&nbsp;&nbsp;&nbsp;您的账号 <b>{json_in["username"]}</b> 将于 <span style="color: red; font-size: 16px" >{json_in["when_expired"]}</span> 密码过期，请及时到 <a href="{url}">{url}</a> 更新密码。</p>
-                            <p>&nbsp;&nbsp;&nbsp;&nbsp;请提前修改密码，以免耽误您的工作，如遭遇问题请及时联系。</p>
+                            <p>&nbsp;&nbsp;&nbsp;&nbsp;您好!<br>&nbsp;&nbsp;&nbsp;&nbsp;您的账号 {json_in["username"]} 将于 <span style="color: red; font-size: 16px" >{json_in["when_expired"]}</span> 密码过期，请及时到 <a href="{url}">{url}</a> 更新密码。<br>&nbsp;&nbsp;&nbsp;&nbsp;请提前修改密码，以免耽误您的工作，如遭遇问题请及时联系。</p>
                             <br><br>
                             <p style="text-align: right;">{company_name} IT部门</p>
                             <p style="text-align: right;">{dt.datetime.now().strftime('%Y-%m-%d %H:%M')}</p>
