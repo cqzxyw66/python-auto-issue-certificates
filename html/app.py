@@ -13,8 +13,8 @@ import time
 app = Flask(__name__)
 
 @app.route('/')
-def index():
-    return 'Hello, World!'
+def home():
+    return render_template('index.html', title='证书域控管理平台')
 
 @app.route('/issue_certificate', methods=['POST', 'GET'])
 def issue_certificate():
