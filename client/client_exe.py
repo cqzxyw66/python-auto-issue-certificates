@@ -53,7 +53,7 @@ def get_certificate_status(username) -> str:
     command = 'get-childitem -path cert:\\currentuser\\my | where-object {{ $_.subject -like \'*{0}*\' -and $_.subject -like \'*OU*CN*O*C*\' }} | format-list'.format(username)
     result = subprocess.check_output(['powershell', '-Command', command], shell=True)
     if result:
-        result = result.decode('utf-8').strip().splitlines()[5].split(':', maxsplit=1)[1].strip()
+        result = result.decode('utf-8').strip().splitlines()[5].split(':', maxsplit=1)[1].replace('/','-').strip()
         return '存在，有效期至：' + result
     else:
         return '未发现证书'
@@ -105,7 +105,7 @@ def start_button():
     get_serial_number_result = get_serial_number_status(computer_info['serial_number'])
     label_serialnumber_status.config(text=get_serial_number_result, fg='green' if get_serial_number_result == 'OK' else 'red')
     # label_serialnumber_status.config(text=get_serial_number_status(computer_info['serial_number']), fg='green' if get_serial_number_status(computer_info['serial_number']) == 'OK' else 'red') 请求了两次接口，暂时停用
-    label_account_status.config(text='OK' if datetime.datetime.strptime(label_account_value['text'].split('：')[1], '%Y-%m-%d %H:%M:%S') > datetime.datetime.now() else 'Fail', fg='green' if datetime.datetime.strptime(label_account_value['text'].split('：')[1], '%Y-%m-%d %H:%M:%S') > datetime.datetime.now() else 'red')
+    label_account_status.config(text='OK' if '不存在' not in label_account_value['text'] and datetime.datetime.strptime(label_account_value['text'].split('：')[1], '%Y-%m-%d %H:%M:%S') > datetime.datetime.now() else 'Fail', fg='green' if '不存在' not in label_account_value['text'] and datetime.datetime.strptime(label_account_value['text'].split('：')[1], '%Y-%m-%d %H:%M:%S') > datetime.datetime.now() else 'red')
     #获取公司域名
     get_domain_result = get_domain()
     label_domain_status.config(text='OK' if label_domain_value['text'] == get_domain_result else 'Fail', fg='green' if label_domain_value['text'] == get_domain_result else 'red')
