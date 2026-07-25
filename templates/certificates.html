@@ -1,0 +1,41 @@
+{% extends 'layout.html' %}
+{% block content %}
+<section class="panel">
+    <h2>证书配置</h2>
+    <div class="card-grid">
+        <div class="card">
+            <h3>CA 证书生成</h3>
+            <p>生成 CA CSR，并保存本地用于申请域控证书。</p>
+            <form method="post">
+                <input type="hidden" name="action" value="generate">
+                <button type="submit">生成 CA CSR</button>
+            </form>
+            <ul class="file-status">
+                <li>CA CSR: {{ '已生成' if status['ca_csr.pem'] else '未生成' }}</li>
+                <li>CA 私钥: {{ '已生成' if status['ca_private_key.pem'] else '未生成' }}</li>
+                <li>CA 证书: {{ '已上传' if status['ca_certificate.pem'] else '未上传' }}</li>
+                <li>域控证书: {{ '已上传' if status['domain_controller_certificate.cer'] else '未上传' }}</li>
+            </ul>
+            <div class="file-links">
+                {% if status['ca_csr.pem'] %}<a href="{{ url_for('download', filename='ca_csr.pem') }}">下载 CA CSR</a>{% endif %}
+                {% if status['ca_private_key.pem'] %}<a href="{{ url_for('download', filename='ca_private_key.pem') }}">下载 CA 私钥</a>{% endif %}
+            </div>
+        </div>
+        <div class="card">
+            <h3>上传证书</h3>
+            <form method="post" enctype="multipart/form-data">
+                <input type="hidden" name="action" value="upload_ca">
+                <label>上传 CA 证书 (ca_certificate.pem)</label>
+                <input type="file" name="ca_certificate" accept=".pem">
+                <button type="submit">上传 CA 证书</button>
+            </form>
+            <form method="post" enctype="multipart/form-data">
+                <input type="hidden" name="action" value="upload_dc">
+                <label>上传域控证书 (domain_controller_certificate.cer)</label>
+                <input type="file" name="dc_certificate" accept=".cer,.crt,.pem">
+                <button type="submit">上传域控证书</button>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

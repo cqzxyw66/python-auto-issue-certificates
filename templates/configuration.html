@@ -1,0 +1,69 @@
+{% extends 'layout.html' %}
+{% block content %}
+<section class="panel">
+    <h2>系统配置</h2>
+    <form method="post" enctype="multipart/form-data" class="settings-form">
+        <div class="form-row">
+            <label>公司名称</label>
+            <input name="company_name" value="{{ configuration.company_name }}" required>
+        </div>
+        <div class="form-row">
+            <label>AD 域名</label>
+            <input name="common_name" value="{{ configuration.common_name }}" required>
+        </div>
+        <div class="form-row">
+            <label>系统地址</label>
+            <input name="url" value="{{ configuration.url }}" required>
+        </div>
+        <div class="form-row">
+            <label>邮件发送账号</label>
+            <input name="mail_id" value="{{ configuration.mail_id }}">
+        </div>
+        <div class="form-row">
+            <label>邮件密码</label>
+            <input name="mail_pwd" value="{{ configuration.mail_pwd }}" type="password">
+        </div>
+        <div class="form-row">
+            <label>邮件服务器</label>
+            <input name="mail_server" value="{{ configuration.mail_server }}">
+        </div>
+        <div class="form-row">
+            <label>邮件端口</label>
+            <input name="mail_server_port" value="{{ configuration.mail_server_port }}">
+        </div>
+        <div class="form-row">
+            <label>LDAP 账号</label>
+            <input name="ldap_account_id" value="{{ configuration.ldap_account_id }}">
+        </div>
+        <div class="form-row">
+            <label>LDAP 密码</label>
+            <input name="ldap_pwd" value="{{ configuration.ldap_pwd }}" type="password">
+        </div>
+        <div class="form-row">
+            <label>LDAP 地址</label>
+            <input name="ldap_url" value="{{ configuration.ldap_url }}">
+        </div>
+        <div class="form-row">
+            <label>LDAP 端口</label>
+            <input name="ldap_port" value="{{ configuration.ldap_port }}">
+        </div>
+        <div class="form-row">
+            <label>LDAP Base DN</label>
+            <input name="ldap_base_dn" value="{{ configuration.ldap_base_dn }}">
+        </div>
+        <div class="form-row">
+            <label>上传公司 Logo</label>
+            <input type="file" name="company_logo" accept="image/png,image/jpeg">
+        </div>
+        {% if company_logo_url %}
+        <div class="form-row logo-preview">
+            <label>当前 Logo</label>
+            <img class="company-logo" src="{{ company_logo_url }}" alt="当前 Logo">
+        </div>
+        {% endif %}
+        <div class="form-actions">
+            <button type="submit">保存配置</button>
+        </div>
+    </form>
+</section>
+{% endblock %}

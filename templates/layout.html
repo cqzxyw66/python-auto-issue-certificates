@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title or '证书管理平台' }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="site-header">
+    <div class="brand">
+        <a href="{{ url_for('overview') }}">证书域控管理平台</a>
+    </div>
+    {% if session.get('username') %}
+    <div class="header-action">
+        <a class="logout-link" href="{{ url_for('logout') }}">退出</a>
+    </div>
+    {% endif %}
+</header>
+<div class="layout-shell">
+    {% if session.get('username') %}
+    <aside class="side-nav">
+        <nav>
+            <a href="{{ url_for('overview') }}">总览</a>
+            <a href="{{ url_for('history') }}">历史记录</a>
+            <a href="{{ url_for('change_password') }}">修改密码</a>
+            {% if session.get('role') == 'admin' %}
+                <a href="{{ url_for('configuration') }}">配置</a>
+                <a href="{{ url_for('certificates') }}">证书配置</a>
+                <a href="{{ url_for('software') }}">软件下载</a>
+                <a href="{{ url_for('logs') }}">日志</a>
+            {% endif %}
+        </nav>
+    </aside>
+    {% endif %}
+    <main class="page-content">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                    <div class="flash flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+</main>
+</div>
+<footer class="site-footer">
+    <p>Powered by Python Flask · 证书自动签发与域控管理</p>
+</footer>
+</body>
+</html>

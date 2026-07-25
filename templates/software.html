@@ -1,0 +1,21 @@
+{% extends 'layout.html' %}
+{% block content %}
+<section class="panel">
+    <h2>客户端下载</h2>
+    <div class="card-grid">
+        <div class="card wide-card">
+            <h3>生成客户端程序</h3>
+            <p>点击生成后，系统会调用客户端构建脚本并保存到 config 目录。</p>
+            <form method="post">
+                <button type="submit">生成客户端软件</button>
+            </form>
+            {% if exists %}
+            <p>生成文件：<strong>{{ executable_name }}</strong></p>
+            <a class="download-link" href="{{ url_for('download', filename=executable_name) }}">下载客户端</a>
+            {% else %}
+            <p>尚未生成可下载软件。</p>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

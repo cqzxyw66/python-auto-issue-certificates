@@ -1,0 +1,35 @@
+{% extends 'layout.html' %}
+{% block content %}
+<section class="panel">
+    <h2>系统总览</h2>
+    <div class="card-grid">
+        <div class="card">
+            <h3>公司信息</h3>
+            {% if company_logo_url %}
+            <img class="company-logo" src="{{ company_logo_url }}" alt="公司标志">
+            {% endif %}
+            <p><strong>公司名称：</strong>{{ configuration.company_name }}</p>
+            <p><strong>AD 域名：</strong>{{ configuration.common_name }}</p>
+            <p><strong>项目地址：</strong><a href="{{ configuration.url }}" target="_blank">{{ configuration.url }}</a></p>
+        </div>
+        <div class="card">
+            <h3>统计信息</h3>
+            <p><strong>已颁发证书：</strong>{{ certificate_count }}</p>
+            <p><strong>当前用户：</strong>{{ session.get('username') }}</p>
+            <p><strong>角色：</strong>{{ session.get('role') }}</p>
+        </div>
+        <div class="card wide-card">
+            <h3>最新日志</h3>
+            {% if logs %}
+                <ul class="log-list">
+                    {% for log in logs %}
+                        <li><strong>{{ log.timestamp }}</strong> — {{ log.action }} by {{ log.username }}<br>{{ log.details }}</li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>暂无日志。</p>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

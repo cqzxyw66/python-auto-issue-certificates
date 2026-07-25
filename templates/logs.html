@@ -1,0 +1,30 @@
+{% extends 'layout.html' %}
+{% block content %}
+<section class="panel">
+    <h2>系统日志</h2>
+    {% if entries %}
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>时间</th>
+                <th>操作</th>
+                <th>用户名</th>
+                <th>详情</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in entries %}
+            <tr>
+                <td>{{ row.timestamp }}</td>
+                <td>{{ row.action }}</td>
+                <td>{{ row.username }}</td>
+                <td>{{ row.details }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>暂无日志记录。</p>
+    {% endif %}
+</section>
+{% endblock %}
