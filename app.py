@@ -57,29 +57,14 @@ def get_db_connection():
 def ensure_database():
     os.makedirs(CONFIG_DIR, exist_ok=True)
     os.makedirs(DATABASE_DIR, exist_ok=True)
-    server_init_database.init_database()
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute('SELECT COUNT(*) FROM configuration')
         if cursor.fetchone()[0] == 0:
-            cursor.execute(
-                '''INSERT INTO configuration (
-                    company_name, company_logo, common_name, logo, url,
-                    mail_id, mail_pwd, mail_server, mail_server_port,
-                    ldap_account_id, ldap_pwd, ldap_url, ldap_port, ldap_base_dn
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-                (
-                    'Your Company', None, 'yourdomain.com', None, 'http://127.0.0.1:5000',
-                    'admin@example.com', '', 'smtp.example.com', '465',
-                    '', '', 'ldaps://localhost', 636, 'dc=example,dc=com',
-                ),
-            )
+            server_init_database.init_database()
         cursor.execute("SELECT COUNT(*) FROM user WHERE username = 'admin'")
         if cursor.fetchone()[0] == 0:
-            cursor.execute(
-                "INSERT INTO user (username, password, displayname, role, mail, status, when_created, pwd_last_set) VALUES (?, ?, ?, ?, ?, ?, datetime('now', '+8 hours'), datetime('now', '+8 hours'))",
-                ('admin', 'admin123', 'Administrator', 'admin', 'admin@localhost', 'password_reset_required'),
-            )
+            server_init_database.init_database()
         conn.commit()
 
 
