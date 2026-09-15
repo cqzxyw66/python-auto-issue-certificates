@@ -57,16 +57,25 @@ def get_db_connection():
 
 
 def ensure_database():
+    """确保数据库可用：全新环境（新容器、空的挂载卷）时自动建表并写入默认数据。
+
+    注意：必须先确认表存在，再去查 configuration。数据库文件不存在时
+    sqlite 会自动创建一个空文件，直接 SELECT 会报 "no such table"。
+    """
     os.makedirs(CONFIG_DIR, exist_ok=True)
     os.makedirs(DATABASE_DIR, exist_ok=True)
     with get_db_connection() as conn:
         cursor = conn.cursor()
+        cursor.execute("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'configuration'")
+        if cursor.fetchone() is None:
+            # 数据库文件不存在或还是个空库，先把表结构建起来
+            server_init_database.init_database(DATABASE_PATH)
         cursor.execute('SELECT COUNT(*) FROM configuration')
         if cursor.fetchone()[0] == 0:
-            server_init_database.init_database()
+            server_init_database.init_database(DATABASE_PATH)
         cursor.execute("SELECT COUNT(*) FROM user WHERE username = 'admin'")
         if cursor.fetchone()[0] == 0:
-            server_init_database.init_database()
+            server_init_database.init_database(DATABASE_PATH)
         conn.commit()
 
 
@@ -798,10 +807,16 @@ def initialize_scheduler():
         pass
 
 
+_database_checked = False
+
+
 @app.before_request
 def ensure_started():
-    if not os.path.exists(DATABASE_PATH):
+    """兜底：以 flask run / gunicorn 等方式启动时（不会走 __main__），也要保证数据库已初始化。"""
+    global _database_checked
+    if not _database_checked:
         ensure_database()
+        _database_checked = True
 
 
 if __name__ == '__main__':

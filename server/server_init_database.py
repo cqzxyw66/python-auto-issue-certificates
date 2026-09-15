@@ -1,14 +1,22 @@
 #! /bin/env/python3
 # -*- coding: utf-8 -*-
 
+import os
 import sqlite3
 from werkzeug.security import generate_password_hash
 
 DATABASE_PATH = 'config/database/database.db'
 
 
-def init_database():
-    conn = sqlite3.connect(DATABASE_PATH)
+def init_database(database_path=None):
+    """建表并写入默认配置和管理员账号。
+
+    database_path 默认是项目内的相对路径；app.py 会传入绝对路径，
+    这样即使当前工作目录不是项目根目录（例如以别的方式启动服务）也不会写错位置。
+    """
+    path = database_path or DATABASE_PATH
+    os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+    conn = sqlite3.connect(path)
     cursor = conn.cursor()
     cursor.execute('''CREATE TABLE IF NOT EXISTS request_history (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
