@@ -2,13 +2,14 @@
 # -*- coding: utf-8 -*-
 
 import base64
+import io
 import os
 import sqlite3
+import zipfile
 from functools import wraps
 from datetime import datetime, timedelta
 
 import json
-import time
 
 from flask import (
     Flask,
@@ -17,18 +18,19 @@ from flask import (
     redirect,
     render_template,
     request,
+    send_file,
     send_from_directory,
     session,
     url_for,
     jsonify,
 )
 from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash, check_password_hash
 
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
 
 import config.logo_icon as logo_icon
-import server.client_software_pyinstaller as client_builder
 import server.email_notification as email_notification_module
 import server.get_expired_person as get_expired_person_module
 import server.issue_certificate as issue_certificate_module
@@ -115,6 +117,14 @@ def get_configuration():
         cursor.execute('SELECT * FROM configuration LIMIT 1')
         row = cursor.fetchone()
     return dict(row) if row else None
+
+
+def client_executable_name(configuration=None):
+    """客户端 exe 的规范文件名（打包工具、上传接口与下载链接必须保持一致）。"""
+    if configuration is None:
+        configuration = get_configuration() or {}
+    common_name = configuration.get('common_name') or 'client'
+    return secure_filename(f'{common_name}_certificate_tool.exe') or 'certificate_tool.exe'
 
 
 def write_log(action, username, details):
@@ -225,13 +235,30 @@ def login():
                 cursor = conn.cursor()
                 cursor.execute('SELECT * FROM user WHERE username = ?', (username,))
                 user_row = cursor.fetchone()
-            if user_row and user_row['password'] == password:
-                session['username'] = username
-                session['role'] = user_row['role']
-                session['must_change_password'] = user_row['status'] == 'password_reset_required'
-                if user_row['status'] == 'password_reset_required':
-                    return redirect(url_for('change_password'))
-                return redirect(url_for('overview'))
+            if user_row:
+                stored_pwd = user_row['password']
+                # 先尝试哈希验证，失败则回退明文比对（兼容旧数据）
+                password_ok = False
+                if stored_pwd:
+                    password_ok = check_password_hash(stored_pwd, password)
+                if not password_ok:
+                    password_ok = stored_pwd == password
+                if password_ok:
+                    # 如果是明文匹配成功，自动升级为哈希
+                    if stored_pwd == password:
+                        with get_db_connection() as conn:
+                            cursor = conn.cursor()
+                            cursor.execute(
+                                "UPDATE user SET password = ? WHERE username = ?",
+                                (generate_password_hash(password), 'admin'),
+                            )
+                            conn.commit()
+                    session['username'] = username
+                    session['role'] = user_row['role']
+                    session['must_change_password'] = user_row['status'] == 'password_reset_required'
+                    if user_row['status'] == 'password_reset_required':
+                        return redirect(url_for('change_password'))
+                    return redirect(url_for('overview'))
 
         authenticated = False
         try:
@@ -303,13 +330,118 @@ def configuration():
         return redirect(url_for('configuration'))
 
     company_logo_url = blob_to_data_url(config.get('company_logo')) if config else None
-    return render_template('configuration.html', title='配置', configuration=config, company_logo_url=company_logo_url)
+    return render_template('configuration.html', title='企业配置', configuration=config, company_logo_url=company_logo_url)
 
 
-@app.route('/certificates', methods=['GET', 'POST'])
+@app.route('/users', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def users():
+    if request.method == 'POST':
+        user_id = request.form.get('user_id')
+        new_role = request.form.get('role')
+        if user_id and new_role in ('admin', 'user'):
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('SELECT username FROM user WHERE id = ?', (user_id,))
+                target_user = cursor.fetchone()
+                if target_user:
+                    cursor.execute('UPDATE user SET role = ? WHERE id = ?', (new_role, user_id))
+                    conn.commit()
+                    write_log('update_user_role', session.get('username'),
+                              f'Changed role of {target_user["username"]} to {new_role}')
+                    flash(f'用户 {target_user["username"]} 的角色已更新为 {new_role}。', 'success')
+                else:
+                    flash('用户不存在。', 'danger')
+        return redirect(url_for('users'))
+
+    # --- 查询过滤逻辑 ---
+    search_username = request.args.get('username', '').strip()
+    search_status = request.args.get('status', '').strip()
+    search_pwd_from = request.args.get('pwd_last_set_from', '').strip()
+    search_pwd_to = request.args.get('pwd_last_set_to', '').strip()
+    search_created_from = request.args.get('when_created_from', '').strip()
+    search_created_to = request.args.get('when_created_to', '').strip()
+    search_expired_from = request.args.get('when_expired_from', '').strip()
+    search_expired_to = request.args.get('when_expired_to', '').strip()
+
+    conditions = []
+    params = []
+
+    if search_username:
+        conditions.append('username LIKE ?')
+        params.append(f'%{search_username}%')
+    if search_status:
+        conditions.append('status = ?')
+        params.append(search_status)
+    if search_pwd_from:
+        conditions.append('pwd_last_set >= ?')
+        params.append(search_pwd_from)
+    if search_pwd_to:
+        conditions.append('pwd_last_set <= ?')
+        params.append(search_pwd_to + ' 23:59:59')
+    if search_created_from:
+        conditions.append('when_created >= ?')
+        params.append(search_created_from)
+    if search_created_to:
+        conditions.append('when_created <= ?')
+        params.append(search_created_to + ' 23:59:59')
+    if search_expired_from:
+        conditions.append('when_expired >= ?')
+        params.append(search_expired_from)
+    if search_expired_to:
+        conditions.append('when_expired <= ?')
+        params.append(search_expired_to + ' 23:59:59')
+
+    where_clause = ' WHERE ' + ' AND '.join(conditions) if conditions else ''
+
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            'SELECT id, username, displayname, role, mail, status, when_created, pwd_last_set, when_expired FROM user'
+            + where_clause + ' ORDER BY id ASC',
+            params,
+        )
+        all_users = cursor.fetchall()
+
+    return render_template(
+        'users.html',
+        title='用户管理',
+        users=all_users,
+        search_username=search_username,
+        search_status=search_status,
+        search_pwd_from=search_pwd_from,
+        search_pwd_to=search_pwd_to,
+        search_created_from=search_created_from,
+        search_created_to=search_created_to,
+        search_expired_from=search_expired_from,
+        search_expired_to=search_expired_to,
+    )
+
+
+@app.route('/certificates', methods=['GET'])
 @login_required
 @admin_required
 def certificates():
+    config = get_configuration()
+    cert_files = ['ca_private_key.pem', 'ca_csr.pem', 'ca_certificate.pem', 'domain_controller_certificate.cer']
+    files_info = {}
+    for filename in cert_files:
+        filepath = os.path.join(CONFIG_DIR, filename)
+        exists = os.path.exists(filepath)
+        info = {'exists': exists, 'content': ''}
+        if exists:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                info['content'] = f.read()
+        files_info[filename] = info
+
+    return render_template('certificates.html', title='证书概览', configuration=config, files=files_info)
+
+
+@app.route('/certificates/manage', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def certificates_manage():
     config = get_configuration()
     status = {}
     for filename in ['ca_csr.pem', 'ca_private_key.pem', 'ca_certificate.pem', 'domain_controller_certificate.cer']:
@@ -324,53 +456,61 @@ def certificates():
                 write_log('generate_ca', session.get('username'), 'Generated CA CSR and private key')
             except Exception as exc:
                 flash(f'生成 CA CSR 失败：{exc}', 'danger')
-        elif action == 'upload_ca' and 'ca_certificate' in request.files:
-            uploaded_file = request.files['ca_certificate']
-            if uploaded_file and uploaded_file.filename:
-                uploaded_file.save(os.path.join(CONFIG_DIR, 'ca_certificate.pem'))
-                flash('CA 证书已上传。', 'success')
-                write_log('upload_ca_certificate', session.get('username'), 'Uploaded CA certificate')
-        elif action == 'upload_dc' and 'dc_certificate' in request.files:
-            uploaded_file = request.files['dc_certificate']
-            if uploaded_file and uploaded_file.filename:
-                uploaded_file.save(os.path.join(CONFIG_DIR, 'domain_controller_certificate.cer'))
-                flash('域控证书已上传。', 'success')
-                write_log('upload_dc_certificate', session.get('username'), 'Uploaded domain controller certificate')
-        return redirect(url_for('certificates'))
+        elif action == 'paste_ca_cert':
+            content = request.form.get('pem_content', '').strip()
+            if content:
+                with open(os.path.join(CONFIG_DIR, 'ca_certificate.pem'), 'w', encoding='utf-8') as f:
+                    f.write(content)
+                flash('CA 证书已保存。', 'success')
+                write_log('paste_ca_certificate', session.get('username'), 'Pasted CA certificate')
+            else:
+                flash('内容不能为空。', 'danger')
+        elif action == 'paste_dc':
+            content = request.form.get('pem_content', '').strip()
+            if content:
+                with open(os.path.join(CONFIG_DIR, 'domain_controller_certificate.cer'), 'w', encoding='utf-8') as f:
+                    f.write(content)
+                flash('域控证书已保存。', 'success')
+                write_log('paste_dc_certificate', session.get('username'), 'Pasted domain controller certificate')
+            else:
+                flash('内容不能为空。', 'danger')
+        return redirect(url_for('certificates_manage'))
 
-    return render_template('certificates.html', title='证书配置', configuration=config, status=status)
+    return render_template('certificates_manage.html', title='证书管理', configuration=config, status=status)
 
 
-@app.route('/software', methods=['GET', 'POST'])
+@app.route('/software', methods=['GET'])
 @login_required
-@admin_required
 def software():
-    config = get_configuration()
-    executable_name = None
-    if config and config.get('common_name'):
-        executable_name = f"{config.get('common_name')}_certificate_tool.exe"
-    executable_path = os.path.join(CONFIG_DIR, executable_name) if executable_name else None
-    exists = executable_path and os.path.exists(executable_path)
+    """软件管理：展示/下载客户端 exe，并指引管理员在 Windows 上打包。
 
-    if request.method == 'POST':
-        try:
-            client_builder.main()
-            flash('客户端软件已生成。', 'success')
-            write_log('generate_software', session.get('username'), f'Generated client software: {executable_name}')
-        except Exception as exc:
-            flash(f'生成客户端软件失败：{exc}', 'danger')
-        return redirect(url_for('software'))
+    服务端通常部署在 Linux/Docker 上，无法交叉编译出 Windows exe，
+    因此客户端程序由管理员用「客户端打包工具」在 Windows 本机生成，
+    再通过工具自动上传（或手动放置）到 config 目录。
+    """
+    configuration = get_configuration() or {}
+    executable_name = client_executable_name(configuration)
+    executable_path = os.path.join(CONFIG_DIR, executable_name)
+    exists = os.path.exists(executable_path)
 
-    return render_template('software.html', title='软件下载', executable_name=executable_name, exists=exists)
+    executable_info = None
+    if exists:
+        stat_result = os.stat(executable_path)
+        executable_info = {
+            'size': f'{stat_result.st_size / 1024 / 1024:.1f} MB',
+            'updated_at': datetime.fromtimestamp(stat_result.st_mtime).strftime('%Y-%m-%d %H:%M:%S'),
+        }
 
+    # 管理员打包工具：由开发者预先打包好，放到 config 目录后即可在此分发
+    builder_name = 'certificate_builder.exe'
+    builder_path = os.path.join(CONFIG_DIR, builder_name)
+    builder_exists = os.path.exists(builder_path)
+    builder_size = f'{os.path.getsize(builder_path) / 1024 / 1024:.1f} MB' if builder_exists else None
 
-@app.route('/create_client_exe', methods=['GET'])
-@login_required
-@admin_required
-def create_client_exe():
-    time.sleep(3)
-    client_builder.main()
-    return Response(status=200, mimetype='application/json', response=json.dumps({'status': 'success'}))
+    return render_template('software.html', title='软件管理', configuration=configuration,
+                           executable_name=executable_name, exists=exists,
+                           executable_info=executable_info, builder_name=builder_name,
+                           builder_exists=builder_exists, builder_size=builder_size)
 
 
 @app.route('/issue_certificate', methods=['POST', 'GET'])
@@ -456,9 +596,74 @@ def user_query():
 def company_query():
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute('SELECT company_name, common_name FROM configuration')
+        cursor.execute('SELECT company_name, common_name, url FROM configuration')
         company_info = cursor.fetchall()
-    return Response(status=200, mimetype='application/json', response=json.dumps({'company_name': company_info[0][0], 'common_name': company_info[0][1]}))
+    return Response(status=200, mimetype='application/json', response=json.dumps({'company_name': company_info[0][0], 'common_name': company_info[0][1], 'url': company_info[0][2]}))
+
+
+# 客户端打包源码：管理员在自己的 Windows 电脑上用打包工具下载后执行 PyInstaller
+CLIENT_BUILD_SOURCE_FILES = (
+    'client_software_pyinstaller_new.py',
+    'client_exe.py',
+    'get_computer_info.py',
+    'create_certificate.py',
+)
+
+
+@app.route('/client_source_package', methods=['GET'])
+def client_source_package():
+    """把打包客户端所需的源码打成 zip，供管理员的打包工具下载。
+
+    线上环境（Linux/Docker）无法交叉编译出 Windows 的 exe，
+    因此由管理员在 Windows 本机执行打包，这里只负责提供源码。
+    """
+    client_dir = os.path.join(BASE_DIR, 'client')
+    logo_path = os.path.join(CONFIG_DIR, 'logo.ico')
+    missing = [name for name in CLIENT_BUILD_SOURCE_FILES if not os.path.exists(os.path.join(client_dir, name))]
+    if not os.path.exists(logo_path):
+        missing.append('logo.ico')
+    if missing:
+        return jsonify(status='fail', message='服务端缺少文件：' + '、'.join(missing)), 500
+
+    memory_file = io.BytesIO()
+    with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as bundle:
+        for name in CLIENT_BUILD_SOURCE_FILES:
+            bundle.write(os.path.join(client_dir, name), name)
+        bundle.write(logo_path, 'logo.ico')
+        # 打包脚本要求 config 目录存在，并会在结束后清空其中内容
+        bundle.writestr('config/.keep', '')
+    memory_file.seek(0)
+
+    write_log('download_client_source', 'certificate_builder', 'Downloaded client build source package')
+    return send_file(memory_file, mimetype='application/zip', as_attachment=True,
+                     download_name='client_build_sources.zip')
+
+
+@app.route('/upload_client_exe', methods=['POST'])
+def upload_client_exe():
+    """接收管理员打包工具上传的客户端 exe，保存到 config 目录供下载。
+
+    安全提示：该接口默认不校验口令（方便打包工具直接调用）。
+    如需限制，请在服务端设置环境变量 CLIENT_UPLOAD_TOKEN，
+    并在打包工具中填写相同口令。
+    """
+    required_token = os.environ.get('CLIENT_UPLOAD_TOKEN', '').strip()
+    if required_token and request.form.get('token', '').strip() != required_token:
+        return jsonify(status='fail', message='上传口令不正确'), 403
+
+    uploaded = request.files.get('file')
+    if uploaded is None or not uploaded.filename:
+        return jsonify(status='fail', message='未收到上传文件'), 400
+    if not uploaded.filename.lower().endswith('.exe'):
+        return jsonify(status='fail', message='只允许上传 exe 文件'), 400
+
+    filename = client_executable_name()
+    target_path = os.path.join(CONFIG_DIR, filename)
+    uploaded.save(target_path)
+
+    size = os.path.getsize(target_path)
+    write_log('upload_client_exe', 'certificate_builder', f'Uploaded client executable: {filename} ({size} bytes)')
+    return jsonify(status='success', filename=filename, size=size)
 
 
 @app.route('/history')
@@ -472,7 +677,7 @@ def history():
         else:
             cursor.execute('SELECT * FROM request_history WHERE username = ? ORDER BY id DESC LIMIT 100', (username,))
         entries = cursor.fetchall()
-    return render_template('history.html', title='历史记录', entries=entries)
+    return render_template('history.html', title='证书颁发', entries=entries)
 
 
 @app.route('/logs')
@@ -506,14 +711,21 @@ def change_password():
             return redirect(url_for('change_password'))
 
         if session.get('username') == 'admin':
-            if current_user['password'] != old_password:
+            stored_pwd = current_user['password']
+            # 先尝试哈希验证，失败则回退明文比对（兼容旧数据）
+            password_ok = False
+            if stored_pwd:
+                password_ok = check_password_hash(stored_pwd, old_password)
+            if not password_ok:
+                password_ok = stored_pwd == old_password
+            if not password_ok:
                 flash('旧密码不正确。', 'danger')
                 return redirect(url_for('change_password'))
             with get_db_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
                     "UPDATE user SET password = ?, status = 'enabled', pwd_last_set = datetime('now', '+8 hours') WHERE username = ?",
-                    (new_password, 'admin'),
+                    (generate_password_hash(new_password), 'admin'),
                 )
                 conn.commit()
             flash('本地管理员密码已更新。', 'success')

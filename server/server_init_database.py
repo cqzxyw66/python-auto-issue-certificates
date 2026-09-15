@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import sqlite3
+from werkzeug.security import generate_password_hash
 
 DATABASE_PATH = 'config/database/database.db'
 
@@ -80,7 +81,7 @@ def init_database():
     if cursor.fetchone()[0] == 0:
         cursor.execute(
             "INSERT INTO user (username, password, displayname, role, mail, status, when_expired, when_created, pwd_last_set) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now', '+8 hours'), datetime('now', '+8 hours'))",
-            ('admin', 'admin123', 'Administrator', 'admin', 'admin@localhost', 'password_reset_required', '9999-12-31 23:59:59'),
+            ('admin', generate_password_hash('admin123'), 'Administrator', 'admin', 'admin@localhost', 'password_reset_required', '9999-12-31 23:59:59'),
         )
 
     cursor.close()

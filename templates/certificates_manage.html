@@ -1,0 +1,64 @@
+{% extends 'layout.html' %}
+{% block content %}
+<section class="panel">
+    <div class="section-header">
+        <h2>证书管理</h2>
+        <a href="{{ url_for('certificates') }}" class="btn-small btn-manage">← 返回概览</a>
+    </div>
+
+    <div class="card-grid">
+        <!-- ====== CA 证书操作 ====== -->
+        <div class="card">
+            <h3>CA 证书</h3>
+            <p>对当前 CA 不满意时，可重新生成 CA 私钥和 CSR。拿到签署后的证书再粘贴进来。</p>
+
+            <div class="manage-block">
+                <h4>① 重新生成 CA 私钥 + CSR</h4>
+                <form method="post">
+                    <input type="hidden" name="action" value="generate">
+                    <button type="submit" class="btn-small btn-warning"
+                        onclick="return confirm('重新生成将覆盖已有的 CA 私钥和 CSR，确定继续吗？');">
+                        🔄 生成 CA 私钥和 CSR
+                    </button>
+                </form>
+                <ul class="file-status" style="margin-top:10px">
+                    <li>CA 私钥: {{ '✅ 已存在' if status['ca_private_key.pem'] else '❌ 未生成' }}</li>
+                    <li>CA CSR: {{ '✅ 已存在' if status['ca_csr.pem'] else '❌ 未生成' }}</li>
+                </ul>
+                <div class="file-links">
+                    {% if status['ca_csr.pem'] %}<a href="{{ url_for('download', filename='ca_csr.pem') }}">📥 下载 CSR 去签署</a>{% endif %}
+                    {% if status['ca_private_key.pem'] %}<a href="{{ url_for('download', filename='ca_private_key.pem') }}">📥 下载 CA 私钥</a>{% endif %}
+                </div>
+            </div>
+
+            <div class="manage-block">
+                <h4>② 粘贴签署后的 CA 证书</h4>
+                <p class="manage-hint">将 CA 机构签署颁发的 PEM 证书内容粘贴到下方。</p>
+                <form method="post" onsubmit="return confirm('确定要覆盖 CA 证书吗？');">
+                    <input type="hidden" name="action" value="paste_ca_cert">
+                    <textarea name="pem_content" rows="6" placeholder="将 PEM 格式的 CA 证书内容粘贴到这里..."></textarea>
+                    <button type="submit">保存 CA 证书</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ====== 域控证书 ====== -->
+        <div class="card">
+            <h3>域控证书</h3>
+            <p>如需更新域控证书，粘贴新的 PEM 内容即可。</p>
+
+            <div class="manage-block">
+                <h4>粘贴域控证书</h4>
+                <ul class="file-status">
+                    <li>域控证书: {{ '✅ 已存在' if status['domain_controller_certificate.cer'] else '❌ 未设置' }}</li>
+                </ul>
+                <form method="post" onsubmit="return confirm('确定要覆盖域控证书吗？');">
+                    <input type="hidden" name="action" value="paste_dc">
+                    <textarea name="pem_content" rows="6" placeholder="将 PEM 格式的域控证书内容粘贴到这里..."></textarea>
+                    <button type="submit">保存域控证书</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

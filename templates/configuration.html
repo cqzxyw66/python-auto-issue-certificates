@@ -1,57 +1,66 @@
 {% extends 'layout.html' %}
 {% block content %}
 <section class="panel">
-    <h2>系统配置</h2>
-    <form method="post" enctype="multipart/form-data" class="settings-form">
+    <div class="section-header">
+        <h2>企业配置</h2>
+        <div class="config-actions-top">
+            <button type="submit" form="configForm" id="saveBtn" style="display:none">💾 保存</button>
+            <button id="toggleEditBtn" class="btn-small btn-manage" onclick="toggleEdit()">✏️ 编辑</button>
+        </div>
+    </div>
+    <p class="subtitle">关键配置项，默认为只读预览。点击「编辑」后方可修改。</p>
+
+
+    <form method="post" enctype="multipart/form-data" class="settings-form" id="configForm">
         <div class="form-row">
             <label>公司名称</label>
-            <input name="company_name" value="{{ configuration.company_name }}" required>
+            <input name="company_name" value="{{ configuration.company_name }}" required readonly>
         </div>
         <div class="form-row">
             <label>AD 域名</label>
-            <input name="common_name" value="{{ configuration.common_name }}" required>
+            <input name="common_name" value="{{ configuration.common_name }}" required readonly>
         </div>
         <div class="form-row">
             <label>系统地址</label>
-            <input name="url" value="{{ configuration.url }}" required>
+            <input name="url" value="{{ configuration.url }}" required readonly>
         </div>
         <div class="form-row">
             <label>邮件发送账号</label>
-            <input name="mail_id" value="{{ configuration.mail_id }}">
+            <input name="mail_id" value="{{ configuration.mail_id }}" readonly>
         </div>
         <div class="form-row">
             <label>邮件密码</label>
-            <input name="mail_pwd" value="{{ configuration.mail_pwd }}" type="password">
+            <input name="mail_pwd" value="{{ configuration.mail_pwd }}" type="password" readonly>
         </div>
         <div class="form-row">
             <label>邮件服务器</label>
-            <input name="mail_server" value="{{ configuration.mail_server }}">
+            <input name="mail_server" value="{{ configuration.mail_server }}" readonly>
         </div>
         <div class="form-row">
             <label>邮件端口</label>
-            <input name="mail_server_port" value="{{ configuration.mail_server_port }}">
+            <input name="mail_server_port" value="{{ configuration.mail_server_port }}" readonly>
         </div>
         <div class="form-row">
             <label>LDAP 账号</label>
-            <input name="ldap_account_id" value="{{ configuration.ldap_account_id }}">
+            <input name="ldap_account_id" value="{{ configuration.ldap_account_id }}" readonly>
         </div>
         <div class="form-row">
             <label>LDAP 密码</label>
-            <input name="ldap_pwd" value="{{ configuration.ldap_pwd }}" type="password">
+            <input name="ldap_pwd" value="{{ configuration.ldap_pwd }}" type="password" readonly>
         </div>
         <div class="form-row">
             <label>LDAP 地址</label>
-            <input name="ldap_url" value="{{ configuration.ldap_url }}">
+            <input name="ldap_url" value="{{ configuration.ldap_url }}" readonly>
         </div>
         <div class="form-row">
             <label>LDAP 端口</label>
-            <input name="ldap_port" value="{{ configuration.ldap_port }}">
+            <input name="ldap_port" value="{{ configuration.ldap_port }}" readonly>
         </div>
         <div class="form-row">
             <label>LDAP Base DN</label>
-            <input name="ldap_base_dn" value="{{ configuration.ldap_base_dn }}">
+            <input name="ldap_base_dn" value="{{ configuration.ldap_base_dn }}" readonly>
         </div>
-        <div class="form-row">
+        <div class="form-row" id="logoRow" style="display:none">
             <label>上传公司 Logo</label>
             <input type="file" name="company_logo" accept="image/png,image/jpeg">
         </div>
@@ -61,9 +70,31 @@
             <img class="company-logo" src="{{ company_logo_url }}" alt="当前 Logo">
         </div>
         {% endif %}
-        <div class="form-actions">
-            <button type="submit">保存配置</button>
-        </div>
     </form>
 </section>
+
+<script>
+function toggleEdit() {
+    var form = document.getElementById('configForm');
+    var inputs = form.querySelectorAll('input[name]:not([type="file"])');
+    var btn = document.getElementById('toggleEditBtn');
+    var saveBtn = document.getElementById('saveBtn');
+    var logoRow = document.getElementById('logoRow');
+    var isReadonly = inputs[0].hasAttribute('readonly');
+
+    inputs.forEach(function(inp) {
+        if (isReadonly) {
+            inp.removeAttribute('readonly');
+            inp.classList.add('editable');
+        } else {
+            inp.setAttribute('readonly', '');
+            inp.classList.remove('editable');
+        }
+    });
+
+    saveBtn.style.display = isReadonly ? 'inline-block' : 'none';
+    logoRow.style.display = isReadonly ? 'block' : 'none';
+    btn.textContent = isReadonly ? '🔒 取消' : '✏️ 编辑';
+}
+</script>
 {% endblock %}

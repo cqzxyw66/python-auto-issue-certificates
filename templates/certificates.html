@@ -1,40 +1,85 @@
 {% extends 'layout.html' %}
 {% block content %}
 <section class="panel">
-    <h2>证书配置</h2>
+    <div class="section-header">
+        <h2>证书概览</h2>
+        <a href="{{ url_for('certificates_manage') }}" class="btn-small btn-manage">⚙️ 证书管理</a>
+    </div>
+    <p class="subtitle">当前证书文件内容（只读预览），如需更新请点击「证书管理」。</p>
+
     <div class="card-grid">
+        <!-- ====== CA 管理区域 ====== -->
         <div class="card">
-            <h3>CA 证书生成</h3>
-            <p>生成 CA CSR，并保存本地用于申请域控证书。</p>
-            <form method="post">
-                <input type="hidden" name="action" value="generate">
-                <button type="submit">生成 CA CSR</button>
-            </form>
-            <ul class="file-status">
-                <li>CA CSR: {{ '已生成' if status['ca_csr.pem'] else '未生成' }}</li>
-                <li>CA 私钥: {{ '已生成' if status['ca_private_key.pem'] else '未生成' }}</li>
-                <li>CA 证书: {{ '已上传' if status['ca_certificate.pem'] else '未上传' }}</li>
-                <li>域控证书: {{ '已上传' if status['domain_controller_certificate.cer'] else '未上传' }}</li>
-            </ul>
-            <div class="file-links">
-                {% if status['ca_csr.pem'] %}<a href="{{ url_for('download', filename='ca_csr.pem') }}">下载 CA CSR</a>{% endif %}
-                {% if status['ca_private_key.pem'] %}<a href="{{ url_for('download', filename='ca_private_key.pem') }}">下载 CA 私钥</a>{% endif %}
+            <h3>CA 管理</h3>
+
+            <div class="cert-preview-block">
+                <div class="cert-preview-header">
+                    <span class="cert-filename">ca_private_key.pem</span>
+                    {% if files['ca_private_key.pem'].exists %}
+                        <span class="cert-badge cert-exists">✅ 已就绪</span>
+                    {% else %}
+                        <span class="cert-badge cert-missing">❌ 未设置</span>
+                    {% endif %}
+                </div>
+                <textarea class="cert-preview-textarea" readonly rows="5"
+                {% if not files['ca_private_key.pem'].exists %}placeholder="文件不存在"{% endif %}>{{ files['ca_private_key.pem'].content }}</textarea>
+            </div>
+
+            <div class="cert-preview-block">
+                <div class="cert-preview-header">
+                    <span class="cert-filename">ca_csr.pem</span>
+                    {% if files['ca_csr.pem'].exists %}
+                        <span class="cert-badge cert-exists">✅ 已就绪</span>
+                    {% else %}
+                        <span class="cert-badge cert-missing">❌ 未设置</span>
+                    {% endif %}
+                </div>
+                <textarea class="cert-preview-textarea" readonly rows="5"
+                {% if not files['ca_csr.pem'].exists %}placeholder="文件不存在"{% endif %}>{{ files['ca_csr.pem'].content }}</textarea>
+            </div>
+
+            <div class="cert-preview-block">
+                <div class="cert-preview-header">
+                    <span class="cert-filename">ca_certificate.pem</span>
+                    {% if files['ca_certificate.pem'].exists %}
+                        <span class="cert-badge cert-exists">✅ 已就绪</span>
+                    {% else %}
+                        <span class="cert-badge cert-missing">❌ 未设置</span>
+                    {% endif %}
+                </div>
+                <textarea class="cert-preview-textarea" readonly rows="5"
+                {% if not files['ca_certificate.pem'].exists %}placeholder="文件不存在"{% endif %}>{{ files['ca_certificate.pem'].content }}</textarea>
+            </div>
+
+            <div class="file-links" style="margin-top:10px">
+                {% if files['ca_private_key.pem'].exists %}<a href="{{ url_for('download', filename='ca_private_key.pem') }}">📥 下载 CA 私钥</a>{% endif %}
+                {% if files['ca_csr.pem'].exists %}<a href="{{ url_for('download', filename='ca_csr.pem') }}">📥 下载 CA CSR</a>{% endif %}
+                {% if files['ca_certificate.pem'].exists %}<a href="{{ url_for('download', filename='ca_certificate.pem') }}">📥 下载 CA 证书</a>{% endif %}
             </div>
         </div>
+
+        <!-- ====== 域控证书区域 ====== -->
         <div class="card">
-            <h3>上传证书</h3>
-            <form method="post" enctype="multipart/form-data">
-                <input type="hidden" name="action" value="upload_ca">
-                <label>上传 CA 证书 (ca_certificate.pem)</label>
-                <input type="file" name="ca_certificate" accept=".pem">
-                <button type="submit">上传 CA 证书</button>
-            </form>
-            <form method="post" enctype="multipart/form-data">
-                <input type="hidden" name="action" value="upload_dc">
-                <label>上传域控证书 (domain_controller_certificate.cer)</label>
-                <input type="file" name="dc_certificate" accept=".cer,.crt,.pem">
-                <button type="submit">上传域控证书</button>
-            </form>
+            <h3>域控证书</h3>
+
+            <div class="cert-preview-block">
+                <div class="cert-preview-header">
+                    <span class="cert-filename">domain_controller_certificate.cer</span>
+                    {% if files['domain_controller_certificate.cer'].exists %}
+                        <span class="cert-badge cert-exists">✅ 已就绪</span>
+                    {% else %}
+                        <span class="cert-badge cert-missing">❌ 未设置</span>
+                    {% endif %}
+                </div>
+                <textarea class="cert-preview-textarea" readonly rows="8"
+                {% if not files['domain_controller_certificate.cer'].exists %}placeholder="文件不存在"{% endif %}>{{ files['domain_controller_certificate.cer'].content }}</textarea>
+            </div>
+
+            {% if files['domain_controller_certificate.cer'].exists %}
+            <div class="file-links" style="margin-top:10px">
+                <a href="{{ url_for('download', filename='domain_controller_certificate.cer') }}">📥 下载域控证书</a>
+            </div>
+            {% endif %}
         </div>
     </div>
 </section>

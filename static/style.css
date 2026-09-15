@@ -1,5 +1,8 @@
 body {
     margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
     font-family: "Microsoft Yahei", sans-serif;
     background: #f5f7fa;
     color: #333;
@@ -41,7 +44,8 @@ body {
 
 .layout-shell {
     display: flex;
-    min-height: calc(100vh - 72px);
+    flex: 1 1 auto;
+    min-height: 0;
 }
 
 .side-nav {
@@ -72,12 +76,15 @@ body {
 
 .page-content {
     flex: 1;
+    display: flex;
+    flex-direction: column;
     margin: 24px;
-    padding: 0 24px 48px;
+    padding: 0 24px 24px;
     max-width: none;
 }
 
 .panel {
+    flex: 1 1 auto;
     background: #fff;
     border-radius: 10px;
     padding: 24px;
@@ -211,12 +218,374 @@ body {
 }
 
 .site-footer {
-    margin-top: 40px;
+    margin-top: 0;
     padding: 12px 24px;
     background: #f1f5f9;
     text-align: center;
     color: #64748b;
     font-size: 0.85rem;
+}
+
+/* 用户管理 */
+.role-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.role-admin {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.role-user {
+    background: #e0e7ff;
+    color: #3730a3;
+}
+
+.inline-form {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.role-select {
+    padding: 5px 8px;
+    border: 1px solid #cbd5e1;
+    border-radius: 5px;
+    font-size: 0.85rem;
+    background: #fff;
+}
+
+.btn-small {
+    padding: 5px 12px;
+    border: none;
+    border-radius: 5px;
+    background: #1a73e8;
+    color: #fff;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.btn-small:hover {
+    background: #1558b0;
+}
+
+.btn-search {
+    background: #1a73e8;
+}
+
+.btn-reset {
+    background: #64748b;
+    text-decoration: none;
+    display: inline-block;
+    line-height: normal;
+}
+
+.btn-reset:hover {
+    background: #475569;
+}
+
+/* 搜索表单 */
+.search-form {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+}
+
+.search-row {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.search-row:last-child {
+    margin-bottom: 0;
+}
+
+.search-field {
+    flex: 1;
+    min-width: 200px;
+}
+
+.search-field label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 4px;
+}
+
+.search-field input[type="text"],
+.search-field select {
+    width: 100%;
+    padding: 7px 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 5px;
+    font-size: 0.85rem;
+    box-sizing: border-box;
+    background: #fff;
+}
+
+.date-range {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.date-range input[type="date"] {
+    flex: 1;
+    min-width: 0;
+    padding: 6px 8px;
+    border: 1px solid #cbd5e1;
+    border-radius: 5px;
+    font-size: 0.82rem;
+    box-sizing: border-box;
+    background: #fff;
+}
+
+.date-range span {
+    color: #94a3b8;
+    font-size: 0.82rem;
+    flex-shrink: 0;
+}
+
+.search-actions {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+.search-actions div {
+    display: flex;
+    gap: 8px;
+}
+
+/* 证书粘贴方式 */
+.cert-toggle {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    background: #fafbfc;
+}
+
+.cert-toggle summary {
+    padding: 10px 14px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #1e293b;
+}
+
+.cert-toggle summary:hover {
+    background: #f1f5f9;
+}
+
+.cert-toggle form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 0 14px 14px;
+}
+
+.cert-toggle textarea {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.82rem;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+.cert-toggle button {
+    align-self: flex-start;
+}
+
+/* 证书概览页 */
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+
+.section-header h2 {
+    margin: 0;
+}
+
+.subtitle {
+    color: #64748b;
+    font-size: 0.9rem;
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+.btn-manage {
+    text-decoration: none;
+    padding: 8px 16px;
+}
+
+.cert-preview-block {
+    margin-bottom: 16px;
+}
+
+/* 配置只读/编辑切换 */
+.settings-form input[readonly] {
+    background: #f3f4f6;
+    color: #6b7280;
+    cursor: default;
+}
+
+.settings-form input.editable {
+    background: #fff;
+    color: #333;
+    border-color: #1a73e8;
+    box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.15);
+}
+
+.config-actions-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.config-actions-top button,
+.config-actions-top .btn-small {
+    white-space: nowrap;
+}
+
+#saveBtn {
+    background: #1a73e8;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 0.88rem;
+}
+
+#saveBtn:hover {
+    background: #1558b0;
+}
+
+.cert-preview-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+
+.cert-filename {
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+.cert-badge {
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.cert-exists {
+    color: #065f46;
+}
+
+.cert-missing {
+    color: #991b1b;
+}
+
+.cert-preview-textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    resize: vertical;
+    box-sizing: border-box;
+    background: #f3f4f6;
+    color: #6b7280;
+    cursor: default;
+}
+
+.cert-preview-textarea:focus {
+    outline: none;
+}
+
+.exe-info-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.exe-info-box p {
+    margin: 0 0 12px;
+    color: #475569;
+}
+
+.divider {
+    border: none;
+    border-top: 1px solid #e2e8f0;
+    margin: 20px 0 16px;
+}
+
+/* 证书管理页 */
+.manage-block {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+    background: #fafbfc;
+}
+
+.manage-block h4 {
+    margin: 0 0 10px;
+    font-size: 0.9rem;
+    color: #334155;
+}
+
+.manage-hint {
+    font-size: 0.85rem;
+    color: #64748b;
+    margin: 0 0 10px;
+}
+
+.manage-block textarea {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.82rem;
+    resize: vertical;
+    box-sizing: border-box;
+    margin-bottom: 8px;
+}
+
+.manage-block form {
+    display: flex;
+    flex-direction: column;
+}
+
+.manage-block button {
+    align-self: flex-start;
+}
+
+.btn-warning {
+    background: #d97706 !important;
+}
+
+.btn-warning:hover {
+    background: #b45309 !important;
 }
 
 @media screen and (max-width: 900px) {

@@ -8,7 +8,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.serialization import pkcs12
 import os
 import subprocess
-import client.get_computer_info as get_computer_info
+import get_computer_info as get_computer_info
 
 class certificate_generate:
     def __init__(self):

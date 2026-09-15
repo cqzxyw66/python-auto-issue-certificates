@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^python -m py_compile client\\\\client_software_admin_pyinstaller\\.py app\\.py; if \\(\\$\\?\\) \\{ \"OK: 语法检查通过\" \\}$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

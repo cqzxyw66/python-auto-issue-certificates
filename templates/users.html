@@ -1,0 +1,106 @@
+{% extends 'layout.html' %}
+{% block content %}
+<section class="panel">
+    <h2>用户管理</h2>
+
+    <!-- 搜索表单 -->
+    <form method="get" class="search-form">
+        <div class="search-row">
+            <div class="search-field">
+                <label>用户名</label>
+                <input type="text" name="username" placeholder="模糊搜索" value="{{ search_username }}">
+            </div>
+            <div class="search-field">
+                <label>状态</label>
+                <select name="status">
+                    <option value="">全部</option>
+                    <option value="enabled" {% if search_status == 'enabled' %}selected{% endif %}>启用</option>
+                    <option value="disabled" {% if search_status == 'disabled' %}selected{% endif %}>禁用</option>
+                    <option value="password_reset_required" {% if search_status == 'password_reset_required' %}selected{% endif %}>需重置密码</option>
+                </select>
+            </div>
+            <div class="search-field">
+                <label>修改时间</label>
+                <div class="date-range">
+                    <input type="date" name="pwd_last_set_from" value="{{ search_pwd_from }}">
+                    <span>至</span>
+                    <input type="date" name="pwd_last_set_to" value="{{ search_pwd_to }}">
+                </div>
+            </div>
+        </div>
+        <div class="search-row">
+            <div class="search-field">
+                <label>创建时间</label>
+                <div class="date-range">
+                    <input type="date" name="when_created_from" value="{{ search_created_from }}">
+                    <span>至</span>
+                    <input type="date" name="when_created_to" value="{{ search_created_to }}">
+                </div>
+            </div>
+            <div class="search-field">
+                <label>过期时间</label>
+                <div class="date-range">
+                    <input type="date" name="when_expired_from" value="{{ search_expired_from }}">
+                    <span>至</span>
+                    <input type="date" name="when_expired_to" value="{{ search_expired_to }}">
+                </div>
+            </div>
+            <div class="search-field search-actions">
+                <label>&nbsp;</label>
+                <div>
+                    <button type="submit" class="btn-small btn-search">查询</button>
+                    <a href="{{ url_for('users') }}" class="btn-small btn-reset">重置</a>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    {% if users %}
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>用户名</th>
+                <th>显示名称</th>
+                <th>邮箱</th>
+                <th>角色</th>
+                <th>状态</th>
+                <th>创建时间</th>
+                <th>修改时间</th>
+                <th>过期时间</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for u in users %}
+            <tr>
+                <td>{{ u.id }}</td>
+                <td>{{ u.username }}</td>
+                <td>{{ u.displayname or '-' }}</td>
+                <td>{{ u.mail or '-' }}</td>
+                <td>
+                    <span class="role-badge role-{{ u.role }}">{{ u.role }}</span>
+                </td>
+                <td>{{ u.status }}</td>
+                <td>{{ u.when_created or '-' }}</td>
+                <td>{{ u.pwd_last_set or '-' }}</td>
+                <td>{{ u.when_expired or '-' }}</td>
+                <td>
+                    <form method="post" class="inline-form" onsubmit="return confirm('确定要修改用户 {{ u.username }} 的角色吗？');">
+                        <input type="hidden" name="user_id" value="{{ u.id }}">
+                        <select name="role" class="role-select">
+                            <option value="user" {% if u.role == 'user' %}selected{% endif %}>user</option>
+                            <option value="admin" {% if u.role == 'admin' %}selected{% endif %}>admin</option>
+                        </select>
+                        <button type="submit" class="btn-small">保存</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>暂无匹配的用户数据。</p>
+    {% endif %}
+</section>
+{% endblock %}

@@ -22,12 +22,13 @@
     <aside class="side-nav">
         <nav>
             <a href="{{ url_for('overview') }}">总览</a>
-            <a href="{{ url_for('history') }}">历史记录</a>
+            <a href="{{ url_for('history') }}">证书颁发</a>
             <a href="{{ url_for('change_password') }}">修改密码</a>
+            <a href="{{ url_for('software') }}">软件管理</a>
             {% if session.get('role') == 'admin' %}
-                <a href="{{ url_for('configuration') }}">配置</a>
-                <a href="{{ url_for('certificates') }}">证书配置</a>
-                <a href="{{ url_for('software') }}">软件下载</a>
+                <a href="{{ url_for('configuration') }}">企业配置</a>
+                <a href="{{ url_for('certificates') }}">证书概览</a>
+                <a href="{{ url_for('users') }}">用户管理</a>
                 <a href="{{ url_for('logs') }}">日志</a>
             {% endif %}
         </nav>

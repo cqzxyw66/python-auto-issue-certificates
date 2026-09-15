@@ -1,21 +1,70 @@
 {% extends 'layout.html' %}
 {% block content %}
 <section class="panel">
-    <h2>客户端下载</h2>
+    <h2>软件管理</h2>
+
     <div class="card-grid">
         <div class="card wide-card">
-            <h3>生成客户端程序</h3>
-            <p>点击生成后，系统会调用客户端构建脚本并保存到 config 目录。</p>
-            <form method="post">
-                <button type="submit">生成客户端软件</button>
-            </form>
+            <h3>客户端exe程序</h3>
+
             {% if exists %}
-            <p>生成文件：<strong>{{ executable_name }}</strong></p>
-            <a class="download-link" href="{{ url_for('download', filename=executable_name) }}">下载客户端</a>
+            <div class="cert-preview-block">
+                <div class="cert-preview-header">
+                    <span class="cert-filename">{{ executable_name }}</span>
+                    <span class="cert-badge cert-exists">✅ 已就绪</span>
+                </div>
+                <div class="exe-info-box">
+                    <p>文件大小：{{ executable_info.size }}　更新时间：{{ executable_info.updated_at }}</p>
+                    <p>把下面的下载地址发给需要申请证书的同事，他们在自己电脑上运行即可自助申请证书。</p>
+                    <a class="download-link" href="{{ url_for('download', filename=executable_name) }}">📥 下载客户端</a>
+                </div>
+            </div>
             {% else %}
-            <p>尚未生成可下载软件。</p>
+            <div class="cert-preview-block">
+                <div class="cert-preview-header">
+                    <span class="cert-filename">{{ executable_name }}</span>
+                    <span class="cert-badge cert-missing">❌ 未生成</span>
+                </div>
+                <div class="exe-info-box">
+                    <p>尚未生成客户端exe程序。客户端程序需要在 Windows 电脑上打包，请按下方的“如何生成客户端程序”操作。</p>
+                </div>
+            </div>
             {% endif %}
         </div>
+
+        {% if session.get('role') == 'admin' %}
+        <div class="card wide-card">
+            <h3>如何生成客户端程序</h3>
+            <p class="manage-hint">
+                服务端通常部署在 Linux/Docker 上，无法生成 Windows 的 exe，
+                因此客户端程序由管理员在自己的 Windows 电脑上打包后上传到本服务器。
+            </p>
+
+            <div class="manage-block">
+                <h4>第 1 步：获取「客户端打包工具」</h4>
+                {% if builder_exists %}
+                <p class="manage-hint">管理员专用的 Windows 打包工具，已在服务器上就绪（{{ builder_size }}）。</p>
+                <a class="download-link" href="{{ url_for('download', filename=builder_name) }}">📥 下载客户端打包工具</a>
+                {% else %}
+                <p class="manage-hint">服务器上还没有打包工具文件（{{ builder_name }}）。请把开发者提供的该文件放到服务器
+                    config 目录，刷新本页后即可在此下载。</p>
+                {% endif %}
+            </div>
+
+            <div class="manage-block">
+                <h4>第 2 步：在 Windows 上打包并上传</h4>
+                <ol class="file-status">
+                    <li>在一台 Windows 电脑上运行打包工具（首次运行会自动检查并安装 Python 环境）。</li>
+                    <li>在工具中填写本项目的访问地址：<strong>{{ configuration.url }}</strong>。</li>
+                    <li>点击“开始生成客户端”，工具会自动下载源码、配置环境并打包出
+                        <strong>{{ executable_name }}</strong>。</li>
+                    <li>打包完成后工具会自动上传到本服务器；刷新本页面即可下载、分发给同事。</li>
+                </ol>
+                <p class="manage-hint">若自动上传失败，可把生成的 exe 手动放到服务器 config 目录，文件名保持为
+                    {{ executable_name }}。</p>
+            </div>
+        </div>
+        {% endif %}
     </div>
 </section>
 {% endblock %}
