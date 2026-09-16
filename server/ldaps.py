@@ -9,7 +9,7 @@ import ldap3.core.exceptions
 import os
 
 DEFAULT_CA_CERT = 'config/domain_controller_certificate.cer'
-LEGACY_CA_CERT = 'config/domain_controller_certifiate.cer'
+LEGACY_CA_CERT = 'config/domain_controller_certificate.cer'
 DATABASE_PATH = 'config/database/database.db'
 
 
@@ -52,7 +52,7 @@ class ldap_connection():
             auto_bind=True,
         )
 
-        search_filter = '(&(objectClass=user))'
+        search_filter = '(&(objectClass=user)(objectCategory=person))'
         attributes = [
             'cn',
             'sAMAccountName',
