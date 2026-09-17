@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title or '证书管理平台' }}</title>
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -49,7 +50,7 @@
 </main>
 </div>
 <footer class="site-footer">
-    <p>Powered by Python Flask · 证书自动签发与域控管理</p>
+    <p>Powered by Python 证书自动签发与域控管理 Author: yangwei@yangyuetong.com</p>
 </footer>
 </body>
 </html>

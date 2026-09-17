@@ -30,7 +30,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
 
-import config.logo_icon as logo_icon
+import system_config.logo_icon as logo_icon
 import server.email_notification as email_notification_module
 import server.get_expired_person as get_expired_person_module
 import server.issue_certificate as issue_certificate_module
@@ -41,6 +41,7 @@ import server.server_init_database as server_init_database
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 CONFIG_DIR = os.path.join(BASE_DIR, 'config')
+SYSTEM_CONFIG_DIR = os.path.join(BASE_DIR, 'system_config')
 DATABASE_DIR = os.path.join(CONFIG_DIR, 'database')
 DATABASE_PATH = os.path.join(DATABASE_DIR, 'database.db')
 ALLOWED_LOGO_EXTENSIONS = {'png', 'jpg', 'jpeg'}
@@ -189,6 +190,8 @@ def save_logo_file(logo_file):
             logo_bytes = f.read()
         icon_bytes = None
         if os.path.exists(icon_path):
+            import shutil
+            shutil.copy(icon_path, os.path.join('static', 'favicon.ico'))
             with open(icon_path, 'rb') as f:
                 icon_bytes = f.read()
         with get_db_connection() as conn:
@@ -512,7 +515,7 @@ def software():
 
     # 管理员打包工具：由开发者预先打包好，放到 config 目录后即可在此分发
     builder_name = 'certificate_builder.exe'
-    builder_path = os.path.join(CONFIG_DIR, builder_name)
+    builder_path = os.path.join(SYSTEM_CONFIG_DIR, builder_name)
     builder_exists = os.path.exists(builder_path)
     builder_size = f'{os.path.getsize(builder_path) / 1024 / 1024:.1f} MB' if builder_exists else None
 
@@ -768,11 +771,14 @@ def download(filename):
     if filename not in allowed_names and not filename.endswith('.exe'):
         flash('不支持的下载文件。', 'danger')
         return redirect(url_for('overview'))
-    file_path = os.path.join(CONFIG_DIR, filename)
+
+    # 打包工具 exe 存放在 system_config 目录，其余证书/客户端文件存放在 config 目录
+    download_dir = SYSTEM_CONFIG_DIR if filename == 'certificate_builder.exe' else CONFIG_DIR
+    file_path = os.path.join(download_dir, filename)
     if not os.path.exists(file_path):
         flash('文件未找到。', 'danger')
         return redirect(url_for('overview'))
-    return send_from_directory(CONFIG_DIR, filename, as_attachment=True)
+    return send_from_directory(download_dir, filename, as_attachment=True)
 
 
 def sync_users():

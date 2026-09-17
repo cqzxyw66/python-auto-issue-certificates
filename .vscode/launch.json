@@ -6,15 +6,27 @@
     "configurations": [
         
         {
+            "name": "Flask: app.py (开发调试)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/app.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "python": "${command:python.interpreterPath}",
+            "env": {
+                "FLASK_DEBUG": "1",
+                "PYTHONUTF8": "1"
+            },
+            "justMyCode": true
+        },
+        {
             "name": "Python 调试程序: 当前文件",
             "type": "debugpy",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
-            "env": {
-                "PYTHONPATH": "${workspaceFolder}"
-            },
+            "python": "${command:python.interpreterPath}",
 
             "justMyCode": true
         }
