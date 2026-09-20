@@ -1,4 +1,4 @@
-#! /usr/bin/env python3
+#! /usr/bin/python3
 # -*- coding: utf-8 -*-
 """
 客户端打包工具（公司管理员使用）
@@ -333,15 +333,17 @@ class CertificateBuilderApp:
             self.log(f'创建临时工作目录：{work_dir}')
             self._download_sources(base_url, work_dir)
 
-            # 3. 配置本机 Python 环境
+            # 3. 配置本机 Python 环境（依赖装在临时虚拟环境里，不污染全局）
             python_cmd = self._ensure_python()
             if self.skip_install_var.get():
                 self.log('已勾选“跳过依赖安装”，直接使用本机现有依赖。', 'warn')
+                build_python = python_cmd
             else:
-                self._install_packages(python_cmd)
+                build_python = self._install_packages(python_cmd, work_dir)
 
             # 4. 执行打包
-            exe_name, exe_path = self._run_build(python_cmd, work_dir, base_url, company)
+            # 必须用虚拟环境的解释器，否则用全局 python 跑打包脚本会找不到刚装好的 PyInstaller
+            exe_name, exe_path = self._run_build(build_python, work_dir, base_url, company)
 
             # 5. 复制到输出目录
             target_path = os.path.join(output_dir, exe_name)
@@ -369,7 +371,7 @@ class CertificateBuilderApp:
         finally:
             if work_dir and os.path.isdir(work_dir):
                 shutil.rmtree(work_dir, ignore_errors=True)
-                self.log(f'已清理临时工作目录：{work_dir}')
+                self.log(f'已清理临时工作目录（含临时虚拟环境）：{work_dir}')
 
         self._finish(ok, message)
 
@@ -453,6 +455,9 @@ class CertificateBuilderApp:
         # 避免 PyInstaller 打包后的环境变量干扰子进程解释器
         env.pop('PYTHONHOME', None)
         env.pop('PYTHONPATH', None)
+        # 本工具自身若在某个虚拟环境里运行，不要把该状态带给子进程，
+        # 否则子进程里 pip / python 的解析结果会被意外改写
+        env.pop('VIRTUAL_ENV', None)
         return env
 
     def _probe(self, cmd):
@@ -558,25 +563,51 @@ class CertificateBuilderApp:
             raise BuilderError('Python 已安装但当前进程还找不到它，请重新打开本工具再试。')
         return python_cmd
 
-    def _install_packages(self, python_cmd):
-        if self._probe(python_cmd + ['-m', 'pip', '--version']) is None:
-            self.log('未检测到 pip，尝试用 ensurepip 安装 ...', 'warn')
-            self._run_command(python_cmd + ['-m', 'ensurepip', '--upgrade'], timeout=600)
+    def _venv_python(self, venv_dir):
+        """返回虚拟环境解释器的绝对路径。"""
+        if os.name == 'nt':
+            return os.path.join(venv_dir, 'Scripts', 'python.exe')
+        return os.path.join(venv_dir, 'bin', 'python')
 
-        cmd = python_cmd + ['-m', 'pip', 'install', '--upgrade', '--disable-pip-version-check',
-                            '--no-warn-script-location', *BUILD_PACKAGES]
+    def _install_packages(self, python_cmd, work_dir):
+        """在 work_dir 下建一个临时虚拟环境并安装打包依赖，返回该环境的命令前缀（列表）。
+
+        返回值与 _find_python / _ensure_python 保持一致，都是“命令前缀列表”，
+        调用方可以直接做 venv_cmd + [参数...]，不要再返回裸路径字符串。
+
+        这里刻意不调用 Activate.ps1 / deactivate：_run_command 每次都新起一个进程，
+        激活只对那一个进程有效，进程一结束就失效，下一个进程仍然用全局 python，
+        依赖就会装到全局去。正确做法是直接用虚拟环境里的 python 绝对路径执行 pip，
+        这样既不污染全局，也不依赖执行策略是否允许运行 .ps1 脚本。
+        """
+
+        venv_dir = os.path.join(work_dir, '.venv')
+        venv_python = self._venv_python(venv_dir)
+        self.log(f'创建临时虚拟环境（打包结束后随工作目录一起删除）：{venv_dir}')
+        if self._run_command(python_cmd + ['-m', 'venv', venv_dir], timeout=600) != 0:
+            raise BuilderError('创建虚拟环境失败，请确认 Python 安装完整（自带 venv 与 pip 模块）。')
+        if not os.path.exists(venv_python):
+            raise BuilderError(f'虚拟环境创建异常，未找到解释器：{venv_python}')
+
+        venv_cmd = [venv_python]
+
+        cmd = venv_cmd + ['-m', 'pip', 'install', '--upgrade', '--disable-pip-version-check',
+                          '--no-warn-script-location', *BUILD_PACKAGES]
         index = (self.index_var.get() or '').strip()
         if index:
             cmd += ['-i', index]
+
         self.log('安装打包所需依赖（pyinstaller / pyinstaller-versionfile / requests / cryptography）...')
+
         if self._run_command(cmd, timeout=1800) != 0:
             raise BuilderError('依赖安装失败，请检查网络，或更换 pip 软件源后重试。')
         self.log('依赖安装完成。', 'ok')
+        return venv_cmd
 
     def _run_build(self, python_cmd, work_dir, base_url, company):
         script_path = os.path.join(work_dir, BUILD_SCRIPT_NAME)
         query_url = base_url + COMPANY_API
-        self.log(f'开始打包（首次打包通常需要 1-3 分钟）：python {BUILD_SCRIPT_NAME} {query_url}')
+        self.log(f'开始打包（首次打包通常需要 1-3 分钟）：{" ".join(python_cmd)} {BUILD_SCRIPT_NAME} {query_url}')
         code = self._run_command(python_cmd + [script_path, query_url], cwd=work_dir, timeout=BUILD_TIMEOUT)
         if code != 0:
             raise BuilderError('打包脚本执行失败，请查看上方日志定位原因。')

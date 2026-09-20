@@ -1,5 +1,5 @@
-#! /usr/env/python3
-#! -*- coding: utf-8 -*-
+#! /usr/bin/python3
+# -*- coding: utf-8 -*-
 
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes

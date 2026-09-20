@@ -1,5 +1,5 @@
-#! /usr/env/python3
-#! -*- coding: utf-8 -*-
+#! /usr/bin/python3
+# -*- coding: utf-8 -*-
 
 import subprocess
 import tkinter as tk
@@ -9,7 +9,7 @@ import requests
 import datetime
 import client.create_certificate as create_certificate
 from cryptography.hazmat.primitives import serialization
-import system_config.logo_icon as logo_icon
+# import server.logo_icon as logo_icon
 
 #获取参数传进来的企业信息
 name = '重庆悦潼科技有限公司'
@@ -34,10 +34,10 @@ window.columnconfigure(3, weight=1)
 window.minsize(window_width, window_height)
 var_out = tk.StringVar()
 
-#设置图标
-logo_icon = logo_icon.png_to_ico('config/logo.png', 'config/logo.ico')
-img = tk.PhotoImage(data=logo_icon)
-window.iconphoto(True, img)
+#设置图标，暂时不要了。用来本地调试的。
+# logo_icon = logo_icon.png_to_ico('config/logo.png', 'config/logo.ico')
+# img = tk.PhotoImage(data=logo_icon)
+# window.iconphoto(True, img)
 
 #获取账号有效期
 def get_account_when_expired(username):

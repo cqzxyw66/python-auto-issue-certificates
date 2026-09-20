@@ -27,6 +27,9 @@
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
             "python": "${command:python.interpreterPath}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            },
 
             "justMyCode": true
         }
