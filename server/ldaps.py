@@ -160,8 +160,8 @@ def main(ca_certs_file=DEFAULT_CA_CERT):
         cursor.execute("SELECT username FROM user")
         query_result = [row[0] for row in cursor.fetchall()]
         for username in query_result:
-            if username not in [item[0] for item in user_result_from_ldaps]:
-                cursor.execute("UPDATE user SET status = 'deleted' WHERE username = ?", (username,))
+            if username not in [item[0] for item in user_result_from_ldaps] and username != 'admin':
+                cursor.execute("UPDATE user SET status = 'deleted' WHERE username = ? AND username != 'admin' AND status != 'deleted'", (username,))
 
         cursor.executemany(
             """
