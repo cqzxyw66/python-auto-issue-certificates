@@ -1,0 +1,28 @@
+{% extends 'layout.html' %}
+{% block content %}
+<section class="panel">
+    <h2>序列号管理</h2>
+    {% if entries %}
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>序号</th>
+                <th>序列号</th>
+                <th>备注</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in entries %}
+            <tr>
+                <td>{{ row.id }}</td>
+                <td>{{ row.serialnumber }}</td>
+                <td>{{ row.comment }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>暂无序列号记录。</p>
+    {% endif %}
+</section>
+{% endblock %}

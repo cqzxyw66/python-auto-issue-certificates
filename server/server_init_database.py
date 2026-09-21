@@ -68,7 +68,8 @@ def init_database(database_path=None):
                         details TEXT)''')
     cursor.execute('''CREATE TABLE IF NOT EXISTS serial_number (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        serial_number TEXT UNIQUE)''')
+                        serial_number TEXT UNIQUE,
+                        comment TEXT)''')
 
     cursor.execute('SELECT COUNT(*) FROM configuration')
     if cursor.fetchone()[0] == 0:

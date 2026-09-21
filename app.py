@@ -780,6 +780,16 @@ def download(filename):
         return redirect(url_for('overview'))
     return send_from_directory(download_dir, filename, as_attachment=True)
 
+@app.route('/serial_numbers')
+@login_required
+@admin_required
+def serial_numbers():
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM serial_number ORDER BY id DESC LIMIT 100')
+        entries = cursor.fetchall()
+    return render_template('serial_numbers.html', title='序列号管理', entries=entries)
+
 
 def sync_users():
     try:
